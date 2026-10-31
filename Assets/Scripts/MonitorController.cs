@@ -8,7 +8,7 @@ public class MonitorController : MonoBehaviour
     [Header("Vistas")]
     [SerializeField] private GameObject cameraPanel;
     [SerializeField] private Room officeRoom;
-    [SerializeField] private Image officeView;
+    [SerializeField] private SpriteRenderer officeView;
 
     [Header("Controlos")]
     [SerializeField] private PentagramQTE qte;
@@ -33,8 +33,8 @@ public class MonitorController : MonoBehaviour
             : null;
 
         if (toggleAction == null)
-            Debug.LogWarning($"[MonitorController] Ação '{toggleActionName}' não encontrada no " +
-                             "project-wide actions asset. O monitor só abre pelo botão.");
+            Debug.LogWarning($"[MonitorController] Aï¿½ï¿½o '{toggleActionName}' nï¿½o encontrada no " +
+                             "project-wide actions asset. O monitor sï¿½ abre pelo botï¿½o.");
 #endif
     }
 
@@ -49,6 +49,14 @@ public class MonitorController : MonoBehaviour
         Apply(false);
     }
 
+    private void Update()
+    {
+        #if ENABLE_INPUT_SYSTEM
+        if (toggleAction != null && toggleAction.WasPressedThisFrame()) Toggle();
+        #else
+        if (Input.GetKeyDown(KeyCode.Space)) Toggle();
+        #endif
+    }
     public void Toggle() => SetOpen(!IsOpen);
 
     public void SetOpen(bool open)
