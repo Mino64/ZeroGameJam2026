@@ -3,24 +3,24 @@ using UnityEngine;
 public class Health : MonoBehaviour
 {
     [SerializeField] private int maxHealth = 100;
-
-    public int Health {get; set;}
+    public int MaxHealth {  get { return maxHealth; } }
+    public int HP {get; set;}
     public bool IsDead{get; private set;}
 
 
     private void Start()
     {
-        Health = maxHealth;
+        HP = maxHealth;
     }
 
     public void DealDamage(int value)
     {
-        if(isDead) return;
+        if(IsDead) return;
     
-        Health = Health - value;
-        Debug.Log($"{Health}");
+        HP = HP - value;
+        Debug.Log($"{HP}");
 
-        if(Health <=0)
+        if(HP <=0)
         {
             IsDead = true;
             Debug.Log("UH oh u died");
