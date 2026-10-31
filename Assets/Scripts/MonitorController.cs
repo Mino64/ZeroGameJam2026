@@ -49,14 +49,6 @@ public class MonitorController : MonoBehaviour
         Apply(false);
     }
 
-    private void Update()
-    {
-#if ENABLE_INPUT_SYSTEM
-        if (toggleAction != null && toggleAction.WasPressedThisFrame()) Toggle();
-#else
-        if (Input.GetKeyDown(KeyCode.Space)) Toggle();
-#endif
-    }
     public void Toggle() => SetOpen(!IsOpen);
 
     public void SetOpen(bool open)
