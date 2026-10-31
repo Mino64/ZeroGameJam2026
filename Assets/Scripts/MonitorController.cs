@@ -33,8 +33,8 @@ public class MonitorController : MonoBehaviour
             : null;
 
         if (toggleAction == null)
-            Debug.LogWarning($"[MonitorController] Ação '{toggleActionName}' não encontrada no " +
-                             "project-wide actions asset. O monitor só abre pelo botão.");
+            Debug.LogWarning($"[MonitorController] Aï¿½ï¿½o '{toggleActionName}' nï¿½o encontrada no " +
+                             "project-wide actions asset. O monitor sï¿½ abre pelo botï¿½o.");
 #endif
     }
 
