@@ -597,8 +597,8 @@ MonoBehaviour:
   qte: {fileID: 1372698953}
   toggleActionName: Player/Jump
   audioSource: {fileID: 182091799}
-  openClip: {fileID: 0}
-  closeClip: {fileID: 0}
+  openClip: {fileID: 8300000, guid: 1c263162419f288459dce2d0d94c5e9d, type: 3}
+  closeClip: {fileID: 8300000, guid: e433fdf1df8066443aaa88959ab2b658, type: 3}
 --- !u!114 &182091801
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1021,7 +1021,7 @@ MonoBehaviour:
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 10
-    m_MaxSize: 40
+    m_MaxSize: 160
     m_Alignment: 4
     m_AlignByGeometry: 0
     m_RichText: 1
@@ -5355,7 +5355,7 @@ MonoBehaviour:
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 10
-    m_MaxSize: 40
+    m_MaxSize: 90
     m_Alignment: 4
     m_AlignByGeometry: 0
     m_RichText: 1
