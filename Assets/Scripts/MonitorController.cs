@@ -9,6 +9,7 @@ public class MonitorController : MonoBehaviour
     [SerializeField] private GameObject cameraPanel;
     [SerializeField] private Room officeRoom;
     [SerializeField] private SpriteRenderer officeView;
+    [SerializeField] private GameObject officeExtras;
 
     [Header("Controlos")]
     [SerializeField] private PentagramQTE qte;
@@ -58,11 +59,11 @@ public class MonitorController : MonoBehaviour
 
     private void Update()
     {
-        #if ENABLE_INPUT_SYSTEM
-            if (toggleAction != null && toggleAction.WasPressedThisFrame()) Toggle();
-        #else
+#if ENABLE_INPUT_SYSTEM
+        if (toggleAction != null && toggleAction.WasPressedThisFrame()) Toggle();
+#else
             if (Input.GetKeyDown(KeyCode.Space)) Toggle();
-        #endif
+#endif
     }
     public void Toggle() => SetOpen(!IsOpen);
 
@@ -97,6 +98,7 @@ public class MonitorController : MonoBehaviour
         IsOpen = open;
         cameraPanel.SetActive(open);
         officeView.gameObject.SetActive(!open);
+        if (officeExtras != null) officeExtras.SetActive(!open);
     }
     private void RefreshOffice()
     {

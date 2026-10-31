@@ -4,12 +4,18 @@ public class Door : MonoBehaviour
 {
     [SerializeField] Color OpenColor = Color.green;
     [SerializeField] Color CloseColor = Color.red;
-    [SerializeField] SpriteRenderer DoorSprite; 
-    private bool closed=false;
+    [SerializeField] SpriteRenderer DoorSprite;
+    private bool closed = false;
+
+    private void Start()
+    {
+        if (DoorSprite != null) Closed = closed;
+    }
+
     public bool Closed
     {
-        set 
-        { 
+        set
+        {
             closed = value;
             if (closed)
             {
@@ -27,6 +33,6 @@ public class Door : MonoBehaviour
     }
     public void ToggleDoor()
     {
-       Closed = !Closed;
+        Closed = !Closed;
     }
 }

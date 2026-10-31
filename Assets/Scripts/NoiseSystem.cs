@@ -10,13 +10,12 @@ public class NoiseSystem : MonoBehaviour
     private float nextAllowedTime;
 
     public bool CanMakeNoise => Time.time >= nextAllowedTime;
-
-    public void MakeNoise(Room room, bool force = false)
+    public void MakeNoise(Room room, bool force = false, bool silent = false)
     {
         if ((!force && !CanMakeNoise) || room == null) return;
         nextAllowedTime = Time.time + cooldown;
 
-        room.PlayNoise();
+        if (!silent) room.PlayNoise();
         OnNoiseMade?.Invoke(room);
     }
 }

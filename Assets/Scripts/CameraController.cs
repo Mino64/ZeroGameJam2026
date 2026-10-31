@@ -12,6 +12,8 @@ public class CameraController : MonoBehaviour
 
     public Room CurrentRoom { get; private set; }
 
+    public event System.Action<Room> RoomViewed;
+
     private void Start()
     {
         if (startRoom != null) ViewRoom(startRoom);
@@ -26,6 +28,7 @@ public class CameraController : MonoBehaviour
         CurrentRoom = room;
         CurrentRoom.Changed += Refresh;
         Refresh();
+        RoomViewed?.Invoke(room);
 
         if (switched && audioSource != null && switchClip != null)
             audioSource.PlayOneShot(switchClip);

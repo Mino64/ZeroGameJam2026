@@ -9,14 +9,26 @@ public class GameOverController : MonoBehaviour
     [SerializeField] private GameObject _gameOverPanel;
     [SerializeField] private float _jumpscareDuration = 1.5f;
 
+    [Header("Vida")]
+    [SerializeField] private Health _health;
+
     [Header("Som")]
     [SerializeField] private AudioSource _audioSource;
     [SerializeField] private AudioClip _jumpscareClip;
 
     private bool _triggered;
 
-    private void OnEnable() => Monster.OnPlayerAttacked += HandleAttack;
-    private void OnDisable() => Monster.OnPlayerAttacked -= HandleAttack;
+    private void OnEnable()
+    {
+        Monster.OnPlayerAttacked += HandleAttack;
+        if (_health != null) _health.Died += HandleAttack;
+    }
+
+    private void OnDisable()
+    {
+        Monster.OnPlayerAttacked -= HandleAttack;
+        if (_health != null) _health.Died -= HandleAttack;
+    }
 
     private void Start()
     {

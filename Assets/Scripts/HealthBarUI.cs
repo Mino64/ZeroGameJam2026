@@ -1,12 +1,12 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-public class PlayerHealthUI_Bar : MonoBehaviour
+public class HealthBarUI : MonoBehaviour
 {
     [Header("Fill")]
-    [SerializeField] private Image fillImage;      // Image Type = Filled, Horizontal, Origin Left
-    [SerializeField] private Gradient colors;
-    [SerializeField] private float fillSpeed = 1.5f; // fill units per second
+    [SerializeField] private Image fillImage;
+    [SerializeField] private Gradient colors = CreateDefaultGradient();
+    [SerializeField] private float fillSpeed = 1.5f;
 
     [Header("Pop animation")]
     [SerializeField] private AnimationCurve scaleParams = AnimationCurve.EaseInOut(0f, 1.2f, 1f, 1f);
@@ -17,20 +17,35 @@ public class PlayerHealthUI_Bar : MonoBehaviour
     private int prevHealth;
     private float timeSinceLastChange;
     private float displayedFill;
+    private bool initialized;
+
+    private static Gradient CreateDefaultGradient()
+    {
+        var g = new Gradient();
+        g.SetKeys(
+            new[]
+            {
+                new GradientColorKey(new Color(0.85f, 0.1f, 0.1f), 0f),
+                new GradientColorKey(new Color(0.95f, 0.8f, 0.1f), 0.5f),
+                new GradientColorKey(new Color(0.2f, 0.85f, 0.2f), 1f),
+            },
+            new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 1f) });
+        return g;
+    }
 
     private void Awake()
     {
         rectTransform = GetComponent<RectTransform>();
-        timeSinceLastChange = scaleDuration; // don't pop on startup
+        timeSinceLastChange = scaleDuration;
     }
 
     private void Update()
     {
-        if (player == null)
-        {
-            if (player == null) return;
+        if (player == null || fillImage == null) return;
 
-            // Snap to the player's current state, no animation
+        if (!initialized)
+        {
+            initialized = true;
             prevHealth = player.HP;
             displayedFill = GetTargetFill();
             ApplyFill();
@@ -38,7 +53,6 @@ public class PlayerHealthUI_Bar : MonoBehaviour
 
         int health = player.HP;
 
-        // Detect change -> restart pop animation
         if (health != prevHealth)
         {
             timeSinceLastChange = 0f;
@@ -66,7 +80,6 @@ public class PlayerHealthUI_Bar : MonoBehaviour
     {
         float target = GetTargetFill();
 
-        // Frame-rate independent, constant-speed smoothing
         displayedFill = Mathf.MoveTowards(displayedFill, target, fillSpeed * Time.deltaTime);
 
         ApplyFill();
@@ -82,8 +95,5 @@ public class PlayerHealthUI_Bar : MonoBehaviour
     {
         fillImage.fillAmount = displayedFill;
         fillImage.color = colors.Evaluate(displayedFill);
-
-        // If you prefer scaling instead of Image.Type = Filled:
-        // fillImage.rectTransform.localScale = new Vector3(displayedFill, 1f, 1f);
     }
 }

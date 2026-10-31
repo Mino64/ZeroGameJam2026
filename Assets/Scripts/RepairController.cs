@@ -31,6 +31,5 @@ public class RepairController : MonoBehaviour
     }
 
     private void OnSuccess() => target.Restore();
-    private void OnFail() => noise.MakeNoise(target, force: true);
+    private void OnFail() { }
 }
-
