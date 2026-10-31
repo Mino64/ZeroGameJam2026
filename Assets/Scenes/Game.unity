@@ -148,10 +148,8 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1172867035}
   - {fileID: 846503203}
   - {fileID: 341139922}
-  - {fileID: 1399033819}
   - {fileID: 707611893}
   - {fileID: 325657519}
   - {fileID: 747475964}
@@ -390,63 +388,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 214534997}
   m_CullTransparentMesh: 1
---- !u!1001 &238131322
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 3594732547512560467, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -6.8239193
-      objectReference: {fileID: 0}
-    - target: {fileID: 3594732547512560467, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 1.1710751
-      objectReference: {fileID: 0}
-    - target: {fileID: 3594732547512560467, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3594732547512560467, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3594732547512560467, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3594732547512560467, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3594732547512560467, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3594732547512560467, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3594732547512560467, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3594732547512560467, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8326019264202766953, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
-      propertyPath: m_Name
-      value: Door
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
 --- !u!1 &246130018
 GameObject:
   m_ObjectHideFlags: 0
@@ -708,7 +649,6 @@ RectTransform:
   m_Children:
   - {fileID: 992390132}
   - {fileID: 1752535851}
-  - {fileID: 1594305942}
   - {fileID: 1766338680}
   - {fileID: 246130019}
   - {fileID: 855673008}
@@ -717,9 +657,7 @@ RectTransform:
   - {fileID: 1761262993}
   - {fileID: 1790804347}
   - {fileID: 126402326}
-  - {fileID: 1205540761}
   - {fileID: 887826041}
-  - {fileID: 1529144474}
   - {fileID: 1772762643}
   - {fileID: 1697282182}
   - {fileID: 603871509}
@@ -823,6 +761,9 @@ MonoBehaviour:
   successFeedbackTime: 0.35
   failFeedbackTime: 0.5
   shakeStrength: 18
+  audioSource: {fileID: 0}
+  successClip: {fileID: 0}
+  failClip: {fileID: 0}
   pointActionName: UI/Point
 --- !u!224 &325603469
 RectTransform:
@@ -917,7 +858,7 @@ MonoBehaviour:
   roomName: CAM 6
   neighbors:
   - {fileID: 341139924}
-  - {fileID: 1399033817}
+  - {fileID: 0}
   - {fileID: 747475962}
   noiseSource: {fileID: 325657518}
   noiseClips:
@@ -1191,9 +1132,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Room
   roomName: CAM 3
   neighbors:
-  - {fileID: 1172867033}
+  - {fileID: 0}
   - {fileID: 846503201}
-  - {fileID: 1399033817}
+  - {fileID: 0}
   - {fileID: 707611895}
   - {fileID: 325657517}
   noiseSource: {fileID: 341139923}
@@ -1242,7 +1183,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1943618665}
-  m_Father: {fileID: 1126327788}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
@@ -1293,7 +1234,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1066888893}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: MonitorController, Assembly-CSharp
         m_MethodName: Toggle
         m_Mode: 0
@@ -1431,7 +1372,7 @@ SpriteRenderer:
   m_Size: {x: 0.16, y: 0.09}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
+  m_WasSpriteAssigned: 0
   m_SpriteSortPoint: 0
 --- !u!4 &522044590
 Transform:
@@ -1531,7 +1472,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1066888896}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: CameraController, Assembly-CSharp
         m_MethodName: ViewRoom
         m_Mode: 2
@@ -1664,7 +1605,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1066888898}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: NoiseButton, Assembly-CSharp
         m_MethodName: OnClick
         m_Mode: 0
@@ -2061,7 +2002,7 @@ RectTransform:
   - {fileID: 625141484}
   - {fileID: 942046054}
   - {fileID: 325603469}
-  m_Father: {fileID: 1126327788}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
@@ -2255,10 +2196,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 417c1e7cde0b60b4f9f93f2336be875a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Monster
-  startRoom: {fileID: 1172867033}
+  startRoom: {fileID: 0}
   playerRoom: {fileID: 747475962}
   wanderInterval: {x: 6, y: 12}
   moveInterval: 4
+  attackDelay: 3
+  noiseReactionTime: 0.5
 --- !u!4 &828387922
 Transform:
   m_ObjectHideFlags: 0
@@ -2306,7 +2249,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AlterableRoom
   roomName: CAM 2
   neighbors:
-  - {fileID: 1172867033}
+  - {fileID: 0}
   - {fileID: 341139924}
   - {fileID: 707611895}
   noiseSource: {fileID: 846503202}
@@ -2595,12 +2538,12 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1066888896}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: CameraController, Assembly-CSharp
         m_MethodName: ViewRoom
         m_Mode: 2
         m_Arguments:
-          m_ObjectArgument: {fileID: 1172867033}
+          m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: Room, Assembly-CSharp
           m_IntArgument: 0
           m_FloatArgument: 0
@@ -2878,7 +2821,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1066888894}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: RepairController, Assembly-CSharp
         m_MethodName: OnRepairClick
         m_Mode: 0
@@ -3112,7 +3055,7 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1205540761}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
@@ -3473,6 +3416,63 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1644712139}
   m_CullTransparentMesh: 1
+--- !u!1001 &1652582544
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 3594732547512560467, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -6.9267917
+      objectReference: {fileID: 0}
+    - target: {fileID: 3594732547512560467, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.3028202
+      objectReference: {fileID: 0}
+    - target: {fileID: 3594732547512560467, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3594732547512560467, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3594732547512560467, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3594732547512560467, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3594732547512560467, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3594732547512560467, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3594732547512560467, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3594732547512560467, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8326019264202766953, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
+      propertyPath: m_Name
+      value: Door
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
 --- !u!1 &1697282181
 GameObject:
   m_ObjectHideFlags: 0
@@ -3556,12 +3556,12 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1066888896}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: CameraController, Assembly-CSharp
         m_MethodName: ViewRoom
         m_Mode: 2
         m_Arguments:
-          m_ObjectArgument: {fileID: 1399033817}
+          m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: Room, Assembly-CSharp
           m_IntArgument: 0
           m_FloatArgument: 0
@@ -3919,63 +3919,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1766338679}
   m_CullTransparentMesh: 1
---- !u!1001 &1767942752
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 3594732547512560467, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 4.530906
-      objectReference: {fileID: 0}
-    - target: {fileID: 3594732547512560467, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 1.2925171
-      objectReference: {fileID: 0}
-    - target: {fileID: 3594732547512560467, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3594732547512560467, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3594732547512560467, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3594732547512560467, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3594732547512560467, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3594732547512560467, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3594732547512560467, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3594732547512560467, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8326019264202766953, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
-      propertyPath: m_Name
-      value: Door (1)
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: f7bd82ac0b13b1c4f99d40ecbe377117, type: 3}
 --- !u!1 &1772762642
 GameObject:
   m_ObjectHideFlags: 0
@@ -4059,7 +4002,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1066888896}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: CameraController, Assembly-CSharp
         m_MethodName: ViewRoom
         m_Mode: 2
@@ -4214,7 +4157,7 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1529144474}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
@@ -4510,7 +4453,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1066888896}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: CameraController, Assembly-CSharp
         m_MethodName: ViewRoom
         m_Mode: 2
@@ -4717,9 +4660,10 @@ SceneRoots:
   - {fileID: 1634152312}
   - {fileID: 1048071841}
   - {fileID: 51734682}
-  - {fileID: 1066888900}
   - {fileID: 828387922}
-  - {fileID: 1126327788}
   - {fileID: 522044590}
-  - {fileID: 238131322}
-  - {fileID: 1767942752}
+  - {fileID: 375481424}
+  - {fileID: 760879096}
+  - {fileID: 1000811610}
+  - {fileID: 1836861412}
+  - {fileID: 1652582544}
