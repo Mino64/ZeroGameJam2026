@@ -15,11 +15,18 @@ public class MonitorController : MonoBehaviour
 
     [SerializeField] private string toggleActionName = "Player/Jump";
 
+    [Header("Som")]
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip openClip;
+    [SerializeField] private AudioClip closeClip;
+
 #if ENABLE_INPUT_SYSTEM
     private InputAction toggleAction;
 #endif
 
     public bool IsOpen { get; private set; }
+
+    public bool Locked { get; set; }
 
     public event Action<bool> Toggled;
 
@@ -52,16 +59,16 @@ public class MonitorController : MonoBehaviour
     private void Update()
     {
         #if ENABLE_INPUT_SYSTEM
-        if (toggleAction != null && toggleAction.WasPressedThisFrame()) Toggle();
+            if (toggleAction != null && toggleAction.WasPressedThisFrame()) Toggle();
         #else
-        if (Input.GetKeyDown(KeyCode.Space)) Toggle();
+            if (Input.GetKeyDown(KeyCode.Space)) Toggle();
         #endif
     }
     public void Toggle() => SetOpen(!IsOpen);
 
     public void SetOpen(bool open)
     {
-        if (open == IsOpen) return;
+        if (open == IsOpen || Locked) return;
 
         if (!open && qte != null)
         {
@@ -71,6 +78,18 @@ public class MonitorController : MonoBehaviour
 
         Apply(open);
         Toggled?.Invoke(open);
+
+        AudioClip clip = open ? openClip : closeClip;
+        if (audioSource != null && clip != null) audioSource.PlayOneShot(clip);
+    }
+
+    public void ForceClose()
+    {
+        Locked = true;
+        if (!IsOpen) return;
+
+        Apply(false);
+        Toggled?.Invoke(false);
     }
 
     private void Apply(bool open)

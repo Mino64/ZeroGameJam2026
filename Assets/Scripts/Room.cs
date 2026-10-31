@@ -18,12 +18,26 @@ public class Room : MonoBehaviour
 
     public event Action Changed;
 
-    public virtual Sprite GetCurrentSprite()=> MonsterPresent ? monsterSprite : emptySprite;
+    public virtual Sprite GetCurrentSprite() => MonsterPresent ? monsterSprite : emptySprite;
+
+    private int lastNoiseIndex = -1;
 
     public void PlayNoise()
     {
-        if (noiseSource == null || noiseClips == null || noiseClips.Length == 0) return;
-        noiseSource.PlayOneShot(noiseClips[UnityEngine.Random.Range(0, noiseClips.Length)]);
+        if (noiseSource == null) return;
+
+        if (noiseClips == null || noiseClips.Length == 0)
+        {
+            noiseSource.Play();
+            return;
+        }
+
+        int i = UnityEngine.Random.Range(0, noiseClips.Length);
+        if (noiseClips.Length > 1)
+            while (i == lastNoiseIndex) i = UnityEngine.Random.Range(0, noiseClips.Length);
+        lastNoiseIndex = i;
+
+        if (noiseClips[i] != null) noiseSource.PlayOneShot(noiseClips[i]);
     }
 
     public void MonsterEntered()
@@ -39,8 +53,6 @@ public class Room : MonoBehaviour
         OnMonsterExited();
         Changed?.Invoke();
     }
-
-
     protected void NotifyChanged() => Changed?.Invoke();
 
     protected virtual void OnMonsterEntered() { }

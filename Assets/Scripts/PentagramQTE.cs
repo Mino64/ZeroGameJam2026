@@ -38,6 +38,12 @@ public class PentagramQTE : MonoBehaviour, IPointerDownHandler, IPointerUpHandle
     [SerializeField] private float failFeedbackTime = 0.5f;
     [SerializeField] private float shakeStrength = 18f;
 
+    // O AudioSource nao pode estar neste objeto: ele e desativado no fim do QTE e cortava o som
+    [Header("Som")]
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip successClip;
+    [SerializeField] private AudioClip failClip;
+
     private static readonly int[] Order = { 0, 2, 4, 1, 3, 0 };
 
     public bool IsActive { get; private set; }
@@ -97,10 +103,10 @@ public class PentagramQTE : MonoBehaviour, IPointerDownHandler, IPointerUpHandle
         for (int i = 0; i < 5; i++)
         {
             float angle = (startAngle + i * 72f) * Mathf.Deg2Rad;
-            var n = Instantiate(nodePrefab, area);
+            RectTransform n = Instantiate(nodePrefab, area);
             n.anchoredPosition = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
 
-            var img = n.GetComponent<Image>();
+            Image img = n.GetComponent<Image>();
             if (img) { img.color = idleColor; img.raycastTarget = false; }
 
             nodes.Add(n);
@@ -111,7 +117,7 @@ public class PentagramQTE : MonoBehaviour, IPointerDownHandler, IPointerUpHandle
         {
             for (int i = 0; i < Order.Length - 1; i++)
             {
-                var g = Instantiate(linePrefab, area);
+                Image g = Instantiate(linePrefab, area);
                 g.raycastTarget = false;
                 g.color = guideColor;
                 SetLine(g, nodes[Order[i]].anchoredPosition, nodes[Order[i + 1]].anchoredPosition);
@@ -145,7 +151,7 @@ public class PentagramQTE : MonoBehaviour, IPointerDownHandler, IPointerUpHandle
         Vector2 target = nodes[Order[step]].anchoredPosition;
         if (Vector2.Distance(mouse, target) <= hitRadius)
         {
-            var seg = Instantiate(linePrefab, area);
+            Image seg = Instantiate(linePrefab, area);
             seg.raycastTarget = false;
             seg.color = lineColor;
             SetLine(seg, last, target);
@@ -188,10 +194,10 @@ public class PentagramQTE : MonoBehaviour, IPointerDownHandler, IPointerUpHandle
         dragging = false;
         step = 0;
 
-        foreach (var l in lines) if (l) Destroy(l.gameObject);
+        foreach (Image l in lines) if (l) Destroy(l.gameObject);
         lines.Clear();
 
-        foreach (var img in nodeImages) if (img) img.color = idleColor;
+        foreach (Image img in nodeImages) if (img) img.color = idleColor;
         if (tail) tail.gameObject.SetActive(false);
     }
 
@@ -207,16 +213,18 @@ public class PentagramQTE : MonoBehaviour, IPointerDownHandler, IPointerUpHandle
         dragging = false;
         if (tail) tail.gameObject.SetActive(false);
 
-        var callback = success ? onSuccess : onFail;
+        System.Action callback = success ? onSuccess : onFail;
 
         if (success)
         {
             PaintAll(successColor);
+            PlaySound(successClip);
             yield return new WaitForSeconds(successFeedbackTime);
         }
         else
         {
             PaintAll(failColor);
+            PlaySound(failClip);
             yield return FailFeedback();
         }
 
@@ -238,10 +246,15 @@ public class PentagramQTE : MonoBehaviour, IPointerDownHandler, IPointerUpHandle
         }
     }
 
+    private void PlaySound(AudioClip clip)
+    {
+        if (audioSource != null && clip != null) audioSource.PlayOneShot(clip);
+    }
+
     private void PaintAll(Color c)
     {
-        foreach (var img in nodeImages) if (img) img.color = c;
-        foreach (var l in lines) if (l) l.color = c;
+        foreach (Image img in nodeImages) if (img) img.color = c;
+        foreach (Image l in lines) if (l) l.color = c;
     }
 
     private void SetNodeColor(int index, Color c)
@@ -264,9 +277,9 @@ public class PentagramQTE : MonoBehaviour, IPointerDownHandler, IPointerUpHandle
 
     private void ClearAll()
     {
-        foreach (var n in nodes) if (n) Destroy(n.gameObject);
-        foreach (var l in lines) if (l) Destroy(l.gameObject);
-        foreach (var g in guideLines) if (g) Destroy(g.gameObject);
+        foreach (RectTransform n in nodes) if (n) Destroy(n.gameObject);
+        foreach (Image l in lines) if (l) Destroy(l.gameObject);
+        foreach (Image g in guideLines) if (g) Destroy(g.gameObject);
         if (tail) Destroy(tail.gameObject);
 
         nodes.Clear();
@@ -285,21 +298,21 @@ public class PentagramQTE : MonoBehaviour, IPointerDownHandler, IPointerUpHandle
 
     private Vector2 PointerScreenPosition()
     {
-        #if ENABLE_INPUT_SYSTEM
+#if ENABLE_INPUT_SYSTEM
         if (pointAction == null && InputSystem.actions != null)
             pointAction = InputSystem.actions.FindAction(pointActionName);
 
         if (pointAction != null) return pointAction.ReadValue<Vector2>();
 
         return Pointer.current != null ? Pointer.current.position.ReadValue() : Vector2.zero;
-        #else
+#else
             return Input.mousePosition;
-        #endif
+#endif
     }
 
     private void SetLine(Image img, Vector2 a, Vector2 b)
     {
-        var rt = img.rectTransform;
+        RectTransform rt = img.rectTransform;
         rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.pivot = new Vector2(0f, 0.5f);
         rt.anchoredPosition = a;

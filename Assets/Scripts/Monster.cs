@@ -9,12 +9,17 @@ public class Monster : MonoBehaviour
     [SerializeField] private Room playerRoom;
     [SerializeField] private Vector2 wanderInterval = new Vector2(6f, 12f);
     [SerializeField] private float moveInterval = 4f;
+    [SerializeField] private float attackDelay = 3f;
+    [SerializeField] private float noiseReactionTime = 0.5f;
     private Room current;
     private State state = State.Wandering;
     private Queue<Room> path = new Queue<Room>();
     private float timer;
+    private float attackTimer;
+    private bool attacking;
 
     public static event System.Action OnMonsterMoved;
+    public static event System.Action OnPlayerAttacked;
 
     private void OnEnable() => NoiseSystem.OnNoiseMade += HandleNoise;
     private void OnDisable() => NoiseSystem.OnNoiseMade -= HandleNoise;
@@ -27,6 +32,17 @@ public class Monster : MonoBehaviour
 
     private void Update()
     {
+        if (attacking)
+        {
+            attackTimer -= Time.deltaTime;
+            if (attackTimer <= 0f)
+            {
+                attacking = false;
+                OnPlayerAttacked?.Invoke();
+                return;
+            }
+        }
+
         timer -= Time.deltaTime;
         if (timer > 0f) return;
 
@@ -58,7 +74,9 @@ public class Monster : MonoBehaviour
         if (current == null || noiseRoom == current) return;
         path = new Queue<Room>(FindPath(current, noiseRoom));
         state = State.Investigating;
-        ResetTimer(moveInterval, moveInterval);
+
+        float reaction = current == playerRoom ? noiseReactionTime : moveInterval;
+        ResetTimer(reaction, reaction);
     }
 
     private void MoveTo(Room room)
@@ -71,7 +89,8 @@ public class Monster : MonoBehaviour
 
         if (hadRoom) OnMonsterMoved?.Invoke();
 
-        if (room == playerRoom) Debug.Log("Jumpscare / fase de ataque!");
+        attacking = room == playerRoom;
+        if (attacking) attackTimer = attackDelay;
     }
 
     private void ResetTimer(float min, float max) => timer = Random.Range(min, max);
