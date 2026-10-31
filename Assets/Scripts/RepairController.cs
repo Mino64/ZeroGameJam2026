@@ -10,6 +10,8 @@ public class RepairController : MonoBehaviour
 
     private AlterableRoom target;
 
+    public event System.Action<AlterableRoom> Repaired;
+
     private void Update()
     {
         AlterableRoom room = cams.CurrentRoom as AlterableRoom;
@@ -30,6 +32,11 @@ public class RepairController : MonoBehaviour
         qte.Begin(OnSuccess, OnFail);
     }
 
-    private void OnSuccess() => target.Restore();
+    private void OnSuccess()
+    {
+        target.Restore();
+        Repaired?.Invoke(target);
+    }
+
     private void OnFail() { }
 }
