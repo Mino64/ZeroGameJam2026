@@ -14,6 +14,8 @@ public class Monster : MonoBehaviour
     private Queue<Room> path = new Queue<Room>();
     private float timer;
 
+    public static event System.Action OnMonsterMoved;
+
     private void OnEnable() => NoiseSystem.OnNoiseMade += HandleNoise;
     private void OnDisable() => NoiseSystem.OnNoiseMade -= HandleNoise;
 
@@ -61,10 +63,13 @@ public class Monster : MonoBehaviour
 
     private void MoveTo(Room room)
     {
-        if (current != null) current.MonsterExited();
+        bool hadRoom = current != null;
+        if (hadRoom) current.MonsterExited();
 
         current = room;
         current.MonsterEntered();
+
+        if (hadRoom) OnMonsterMoved?.Invoke();
 
         if (room == playerRoom) Debug.Log("Jumpscare / fase de ataque!");
     }
