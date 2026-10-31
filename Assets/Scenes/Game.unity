@@ -3708,8 +3708,8 @@ MonoBehaviour:
   failFeedbackTime: 0.5
   shakeStrength: 18
   audioSource: {fileID: 182091799}
-  successClip: {fileID: 0}
-  failClip: {fileID: 0}
+  successClip: {fileID: 8300000, guid: aeb4876787d14fd4a824c1a9e523061c, type: 3}
+  failClip: {fileID: 8300000, guid: 3da6d195e91f28f4d9880a055de85d19, type: 3}
   pointActionName: UI/Point
 --- !u!224 &1372698954
 RectTransform:
