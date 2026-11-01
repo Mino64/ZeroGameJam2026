@@ -14,6 +14,8 @@ public class BackThreat : MonoBehaviour
     [Header("Tempo em cada estado (segundos, sorteado entre min e max)")]
     [SerializeField] private Vector2 safeTime = new Vector2(30f, 50f);
     [SerializeField] private Vector2 dangerousTime = new Vector2(8f, 14f);
+    [Tooltip("Tempo no estado Kill até realmente matar. Se o jogador olhar para trás antes disso, recupera.")]
+    [SerializeField] private Vector2 killTime = new Vector2(9f, 11f);
 
     [Header("Recuperar")]
     [SerializeField] private float lookTimeToRecover = 2f;
@@ -98,7 +100,17 @@ public class BackThreat : MonoBehaviour
         lookTimer = 0f;
 
         stateTimer -= Time.deltaTime;
-        if (stateTimer <= 0f) SetState(State + 1);
+        if (stateTimer <= 0f)
+        {
+            if (State == ThreatState.Kill) Die();
+            else SetState(State + 1);
+        }
+    }
+
+    private void Die()
+    {
+        dead = true;
+        if (gameOver != null) gameOver.TriggerGameOver();
     }
 
     private void SetState(ThreatState state, bool playSound = true)
@@ -130,14 +142,9 @@ public class BackThreat : MonoBehaviour
         {
             case ThreatState.Safe: stateTimer = UnityEngine.Random.Range(safeTime.x, safeTime.y); break;
             case ThreatState.Dangerous: stateTimer = UnityEngine.Random.Range(dangerousTime.x, dangerousTime.y); break;
+            case ThreatState.Kill: stateTimer = UnityEngine.Random.Range(killTime.x, killTime.y); break;
         }
 
         StateChanged?.Invoke(state);
-
-        if (state == ThreatState.Kill)
-        {
-            dead = true;
-            if (gameOver != null) gameOver.TriggerGameOver();
-        }
     }
 }

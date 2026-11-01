@@ -88,6 +88,9 @@ public class MonitorController : MonoBehaviour
     {
         if (open == IsOpen || Locked) return;
 
+        // Durante a transição (imagens de office) não dá para fechar o monitor
+        if (!open && InTransition) return;
+
         if (!open && qte != null)
         {
             if (qte.IsFinishing) return;
