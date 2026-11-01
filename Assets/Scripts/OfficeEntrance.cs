@@ -5,16 +5,19 @@ public class OfficeEntrance : MonoBehaviour
     [SerializeField] private Room _fromRoom;
     [SerializeField] private Door _door;
 
+
+
     [Header("Som de bater")]
     [SerializeField] private AudioSource _knockSource;
     [SerializeField] private AudioClip[] _knockClips;
     [SerializeField, Range(-1f, 1f)] private float _pan;
 
+
+
     private int _lastKnockIndex = -1;
 
     public Room FromRoom => _fromRoom;
     public bool IsClosed => _door != null && _door.Closed;
-
     public void Knock()
     {
         if (_knockSource == null || _knockClips == null || _knockClips.Length == 0) return;
