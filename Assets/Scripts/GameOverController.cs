@@ -9,6 +9,10 @@ public class GameOverController : MonoBehaviour
     [SerializeField] private GameObject _gameOverPanel;
     [SerializeField] private float _jumpscareDuration = 1.5f;
 
+    [Header("Menu principal")]
+    [Tooltip("Índice da cena do menu principal nas Build Settings.")]
+    [SerializeField] private int _mainMenuScene = 0;
+
     [Header("Vida")]
     [SerializeField] private Health _health;
 
@@ -60,6 +64,13 @@ public class GameOverController : MonoBehaviour
         AudioListener.pause = false;
         Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
+    public void GoToMainMenu()
+    {
+        AudioListener.pause = false;
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(_mainMenuScene);
     }
 
     public void TriggerGameOver() => HandleAttack();

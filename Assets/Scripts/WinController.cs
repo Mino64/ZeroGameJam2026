@@ -9,6 +9,10 @@ public class WinController : MonoBehaviour
     [SerializeField] private GameObject _winPanel;
     [SerializeField] private AlterableRoom[] _rooms;
 
+    [Header("Menu principal")]
+    [Tooltip("Índice da cena do menu principal nas Build Settings.")]
+    [SerializeField] private int _mainMenuScene = 0;
+
     [Header("Som")]
     [SerializeField] private AudioSource _audioSource;
     [SerializeField] private AudioClip _winClip;
@@ -48,6 +52,12 @@ public class WinController : MonoBehaviour
     {
         Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
+    public void GoToMainMenu()
+    {
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(_mainMenuScene);
     }
 
     private void HandleRepaired(AlterableRoom room)

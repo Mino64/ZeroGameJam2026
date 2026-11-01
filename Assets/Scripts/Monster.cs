@@ -13,6 +13,12 @@ public class Monster : MonoBehaviour
     [SerializeField] private float attackDelay = 3f;
     [SerializeField] private float noiseReactionTime = 0.5f;
 
+    [Header("Início")]
+    [Tooltip("O monstro fica parado na sala inicial até o jogador olhar para essa câmara uma vez.")]
+    [SerializeField] private bool waitForFirstLook = true;
+    [SerializeField] private CameraController cams;
+    [SerializeField] private MonitorController monitor;
+
     [Header("Comportamento")]
     [SerializeField, Range(0f, 1f)] private float noiseSuccessChance = 0.8f;
     [SerializeField, Range(0f, 1f)] private float approachChance = 0.3f;
@@ -28,6 +34,7 @@ public class Monster : MonoBehaviour
     private float timer;
     private float attackTimer;
     private bool attacking;
+    private bool waiting;
 
     private OfficeEntrance knockEntrance;
     private Room knockRoom;
@@ -43,10 +50,28 @@ public class Monster : MonoBehaviour
     {
         MoveTo(startRoom);
         ResetTimer(wanderInterval.x, wanderInterval.y);
+
+        if (cams == null) cams = FindFirstObjectByType<CameraController>();
+        if (monitor == null) monitor = FindFirstObjectByType<MonitorController>();
+
+        // Sem câmaras ou monitor na cena não há como o jogador olhar: não espera
+        waiting = waitForFirstLook && cams != null && monitor != null;
     }
+
+    // As câmaras só estão visíveis com o monitor aberto e fora da transição de abertura
+    private bool PlayerIsLookingAtMonster() =>
+        current != null && monitor.IsOpen && !monitor.InTransition && cams.CurrentRoom == current;
 
     private void Update()
     {
+        if (waiting)
+        {
+            if (!PlayerIsLookingAtMonster()) return;
+
+            waiting = false;
+            ResetTimer(wanderInterval.x, wanderInterval.y);
+        }
+
         if (attacking)
         {
             attackTimer -= Time.deltaTime;
@@ -136,7 +161,7 @@ public class Monster : MonoBehaviour
 
     private void HandleNoise(Room noiseRoom)
     {
-        if (current == null || noiseRoom == current) return;
+        if (waiting || current == null || noiseRoom == current) return;
 
         if (Random.value > noiseSuccessChance) return;
 
