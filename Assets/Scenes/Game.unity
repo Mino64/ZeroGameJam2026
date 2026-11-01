@@ -566,8 +566,8 @@ MonoBehaviour:
   transitionSpriteB: {fileID: -7265382394682243127, guid: ab3376edfdfed0a4bba4993ce7409948, type: 3}
   transitionDuration: 1
   audioSource: {fileID: 115749900}
-  openClip: {fileID: 8300000, guid: 1c263162419f288459dce2d0d94c5e9d, type: 3}
-  closeClip: {fileID: 8300000, guid: e433fdf1df8066443aaa88959ab2b658, type: 3}
+  openClip: {fileID: 8300000, guid: 30b15a75f3beaa344b748ed69782d73d, type: 3}
+  closeClip: {fileID: 8300000, guid: 5c4b3a4882d834f4ba88a00919dec079, type: 3}
 --- !u!114 &115749903
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -613,7 +613,7 @@ MonoBehaviour:
   feed: {fileID: 141772130}
   startRoom: {fileID: 693376011}
   audioSource: {fileID: 115749900}
-  switchClip: {fileID: 8300000, guid: f8d2848fc1de826468e683812026c007, type: 3}
+  switchClip: {fileID: 8300000, guid: 5a66a7821bb44844aa85dcc6a30edb8e, type: 3}
 --- !u!114 &115749906
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -749,7 +749,7 @@ MonoBehaviour:
   shakeTarget: {fileID: 0}
   shakeStrength: 6
   audioSource: {fileID: 115749900}
-  staticClip: {fileID: 8300000, guid: edc13114329e34744ba28af471690989, type: 3}
+  staticClip: {fileID: 8300000, guid: 4e6913a706fdc9547bd73cefcc235540, type: 3}
 --- !u!4 &115749913
 Transform:
   m_ObjectHideFlags: 0
