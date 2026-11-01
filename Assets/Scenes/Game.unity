@@ -2297,6 +2297,9 @@ MonoBehaviour:
   moveInterval: 4
   attackDelay: 3
   noiseReactionTime: 0.5
+  waitForFirstLook: 1
+  cams: {fileID: 0}
+  monitor: {fileID: 0}
   noiseSuccessChance: 0.8
   approachChance: 0.3
   approachGiveUpChance: 0.15
@@ -4398,10 +4401,10 @@ MonoBehaviour:
   - {fileID: 8300000, guid: d175208aadfbf9f4f86630674079cdd3, type: 3}
   - {fileID: 8300000, guid: 6c44f8c13b3346248b4fe51a3333bc58, type: 3}
   - {fileID: 8300000, guid: 0d81cbc67b2fdd941b1dfec3bf81ebe2, type: 3}
-  emptySprite: {fileID: 21300000, guid: b299e9a4aa26c414594778ac977bc258, type: 3}
-  monsterSprite: {fileID: 21300000, guid: 3d9bd5a47a4a0404897d833cf9fc3a45, type: 3}
-  alteredEmptySprite: {fileID: 21300000, guid: 75a82c69d058b384ab74bcb504b04cab, type: 3}
-  alteredMonsterSprite: {fileID: 21300000, guid: fb6b6d52ffca33643acb05714b83ba6a, type: 3}
+  emptySprite: {fileID: -3222597619898254332, guid: 80c4c88f12d827e4984511c853562489, type: 3}
+  monsterSprite: {fileID: -4321372367052885062, guid: 131cf6a8fb1674e418fe469e87065bd5, type: 3}
+  alteredEmptySprite: {fileID: 7059207418328508441, guid: 844c7c26b0b394c4dbadf84dddce7df5, type: 3}
+  alteredMonsterSprite: {fileID: -4321372367052885062, guid: 131cf6a8fb1674e418fe469e87065bd5, type: 3}
 --- !u!82 &1489578787
 AudioSource:
   m_ObjectHideFlags: 0
