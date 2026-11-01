@@ -8,6 +8,7 @@ public class CameraButtonHighlight : MonoBehaviour
     [SerializeField] private Image image;
     [SerializeField] private Color normalColor = new Color(0.12f, 0.12f, 0.12f, 0.9f);
     [SerializeField] private Color selectedColor = new Color(0.2f, 0.75f, 0.25f, 1f);
+    [SerializeField] private Color wincolor = Color.purple;
 
     private void OnEnable()
     {
