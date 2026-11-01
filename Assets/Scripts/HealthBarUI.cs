@@ -8,14 +8,10 @@ public class HealthBarUI : MonoBehaviour
     [SerializeField] private Gradient colors = CreateDefaultGradient();
     [SerializeField] private float fillSpeed = 1.5f;
 
-    [Header("Pop animation")]
-    [SerializeField] private AnimationCurve scaleParams = AnimationCurve.EaseInOut(0f, 1.2f, 1f, 1f);
-    [SerializeField] private float scaleDuration = 0.3f;
 
     [SerializeField] private Health player;
     private RectTransform rectTransform;
     private int prevHealth;
-    private float timeSinceLastChange;
     private float displayedFill;
     private bool initialized;
 
@@ -36,7 +32,6 @@ public class HealthBarUI : MonoBehaviour
     private void Awake()
     {
         rectTransform = GetComponent<RectTransform>();
-        timeSinceLastChange = scaleDuration;
     }
 
     private void Update()
@@ -55,26 +50,13 @@ public class HealthBarUI : MonoBehaviour
 
         if (health != prevHealth)
         {
-            timeSinceLastChange = 0f;
             prevHealth = health;
         }
 
-        UpdatePop();
+
         UpdateFill();
     }
 
-    private void UpdatePop()
-    {
-        float t = 1f;
-        if (scaleDuration > 0f && timeSinceLastChange < scaleDuration)
-        {
-            timeSinceLastChange += Time.deltaTime;
-            t = Mathf.Clamp01(timeSinceLastChange / scaleDuration);
-        }
-
-        float x = scaleParams.Evaluate(t);
-        rectTransform.localScale = new Vector3(x, x, 1f);
-    }
 
     private void UpdateFill()
     {
