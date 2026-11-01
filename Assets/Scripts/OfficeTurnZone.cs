@@ -10,6 +10,8 @@ public class OfficeTurnZone : MonoBehaviour, IPointerEnterHandler, IPointerExitH
     [Tooltip("Bloqueia TODAS as zonas de hover durante este tempo depois de esta agir.")]
     [SerializeField] private float _sharedCooldown = 0.3f;
 
+    [SerializeField] private AudioSource _soundPlayer;
+
     private bool _hovered;
     private float _nextAllowedTime;
 
@@ -38,5 +40,6 @@ public class OfficeTurnZone : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         _nextAllowedTime = Time.unscaledTime + _repeatDelay;
         HoverZoneCooldown.Block(_sharedCooldown);
         _office.Turn(_direction);
+        _soundPlayer.Play();
     }
 }
