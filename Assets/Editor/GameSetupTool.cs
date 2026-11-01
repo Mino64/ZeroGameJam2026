@@ -73,6 +73,11 @@ public class GameSetupWindow : EditorWindow
     [SerializeField] private AudioClip qteFailClip;
     [SerializeField] private AudioClip jumpscareClip;
     [SerializeField] private AudioClip knockClip;
+    [SerializeField] private AudioClip doorOpenClip;
+    [SerializeField] private AudioClip doorCloseClip;
+    [SerializeField] private AudioClip backSafeClip;
+    [SerializeField] private AudioClip backDangerousClip;
+    [SerializeField] private AudioClip backKillClip;
 
     private class SoundSet
     {
@@ -80,6 +85,7 @@ public class GameSetupWindow : EditorWindow
         public AudioClip cameraSwitch;
         public AudioClip interference;
         public AudioClip monitorOpen, monitorClose, qteSuccess, qteFail, jumpscare, knock;
+        public AudioClip doorOpen, doorClose, backSafe, backDangerous, backKill;
     }
 
     [System.Serializable]
@@ -89,6 +95,7 @@ public class GameSetupWindow : EditorWindow
         public string cameraSwitch = "";
         public string interference = "";
         public string monitorOpen = "", monitorClose = "", qteSuccess = "", qteFail = "", jumpscare = "", knock = "";
+        public string doorOpen = "", doorClose = "", backSafe = "", backDangerous = "", backKill = "";
     }
 
     private static string PathOf(Object o) => o != null ? AssetDatabase.GetAssetPath(o) : "";
@@ -113,6 +120,11 @@ public class GameSetupWindow : EditorWindow
             qteFail = qteFailClip,
             jumpscare = jumpscareClip,
             knock = knockClip,
+            doorOpen = doorOpenClip,
+            doorClose = doorCloseClip,
+            backSafe = backSafeClip,
+            backDangerous = backDangerousClip,
+            backKill = backKillClip,
         };
     }
 
@@ -130,6 +142,11 @@ public class GameSetupWindow : EditorWindow
             qteFail = PathOf(s.qteFail),
             jumpscare = PathOf(s.jumpscare),
             knock = PathOf(s.knock),
+            doorOpen = PathOf(s.doorOpen),
+            doorClose = PathOf(s.doorClose),
+            backSafe = PathOf(s.backSafe),
+            backDangerous = PathOf(s.backDangerous),
+            backKill = PathOf(s.backKill),
         };
         for (int i = 0; i < s.noise.Length; i++) paths.noise[i] = PathOf(s.noise[i]);
         EditorPrefs.SetString(SoundPrefKey, JsonUtility.ToJson(paths));
@@ -157,6 +174,11 @@ public class GameSetupWindow : EditorWindow
         set.qteFail = LoadClip(paths.qteFail);
         set.jumpscare = LoadClip(paths.jumpscare);
         set.knock = LoadClip(paths.knock);
+        set.doorOpen = LoadClip(paths.doorOpen);
+        set.doorClose = LoadClip(paths.doorClose);
+        set.backSafe = LoadClip(paths.backSafe);
+        set.backDangerous = LoadClip(paths.backDangerous);
+        set.backKill = LoadClip(paths.backKill);
         return set;
     }
 
@@ -172,6 +194,13 @@ public class GameSetupWindow : EditorWindow
         qteFailClip = saved.qteFail;
         jumpscareClip = saved.jumpscare;
         knockClip = saved.knock;
+        doorOpenClip = saved.doorOpen;
+        doorCloseClip = saved.doorClose;
+        backSafeClip = saved.backSafe;
+        backDangerousClip = saved.backDangerous;
+        backKillClip = saved.backKill;
+
+        spriteSlots = LoadSavedSprites();
     }
 
     private const int MinGeneratedRooms = 2;
@@ -181,6 +210,12 @@ public class GameSetupWindow : EditorWindow
     private bool useCustomMap = false;
     private int totalRooms = 10;
     private int alterableRooms = 2;
+
+    private SpriteSlots spriteSlots = new SpriteSlots();
+    private Vector2 scroll;
+    private bool showOfficeSprites = true;
+    private bool showRoomSprites = true;
+    private readonly bool[] roomFoldout = new bool[MaxGeneratedRooms];
 
     // Mapa usado pelo Build: o desenhado à mão (tabelas acima) ou um gerado para N salas
     private class MapLayout
@@ -286,11 +321,332 @@ public class GameSetupWindow : EditorWindow
         };
     }
 
+    // ---- Imagens (guardadas em EditorPrefs; campo vazio = placeholder ao criar / não altera ao aplicar)
+    private const string SpritePrefKey = "FnafSetup.Sprites";
+
+    // As imagens de uma sala: vazia, com o monstro, e as versões "alteradas" (só nas salas alteráveis)
+    private class RoomSpriteSlot
+    {
+        public Sprite empty, monster, alteredEmpty, alteredMonster;
+    }
+
+    private class SpriteSlots
+    {
+        public RoomSpriteSlot[] rooms = new RoomSpriteSlot[0];
+
+        // Escritório, vista da frente (é também a sala "Office" onde o monstro ataca)
+        public Sprite officeFront, officeMonster;
+        // Vistas laterais: fundo com a porta aberta e com a porta fechada
+        public Sprite leftOpen, leftClosed, rightOpen, rightClosed;
+        // Vista de trás: os 3 estados
+        public Sprite backSafe, backDangerous, backKill;
+        // Transição ao abrir o monitor: office 1, e office 2 a meio do tempo
+        public Sprite monitorA, monitorB;
+    }
+
+    [System.Serializable]
+    private class RoomSpritePaths
+    {
+        public string empty = "", monster = "", alteredEmpty = "", alteredMonster = "";
+    }
+
+    [System.Serializable]
+    private class SpritePaths
+    {
+        public RoomSpritePaths[] rooms = new RoomSpritePaths[0];
+        public string officeFront = "", officeMonster = "";
+        public string leftOpen = "", leftClosed = "", rightOpen = "", rightClosed = "";
+        public string backSafe = "", backDangerous = "", backKill = "";
+        public string monitorA = "", monitorB = "";
+    }
+
+    // "caminho|nome": o nome distingue os sprites de uma spritesheet
+    private static string SpriteKey(Sprite s) =>
+        s != null ? AssetDatabase.GetAssetPath(s) + "|" + s.name : "";
+
+    private static Sprite LoadSprite(string key)
+    {
+        if (string.IsNullOrEmpty(key)) return null;
+
+        int bar = key.LastIndexOf('|');
+        string path = bar >= 0 ? key.Substring(0, bar) : key;
+        string spriteName = bar >= 0 ? key.Substring(bar + 1) : "";
+        if (string.IsNullOrEmpty(path)) return null;
+
+        foreach (var o in AssetDatabase.LoadAllAssetsAtPath(path))
+            if (o is Sprite sp && sp.name == spriteName) return sp;
+
+        return AssetDatabase.LoadAssetAtPath<Sprite>(path);
+    }
+
+    private static void SaveSprites(SpriteSlots s)
+    {
+        var paths = new SpritePaths
+        {
+            rooms = new RoomSpritePaths[s.rooms.Length],
+            officeFront = SpriteKey(s.officeFront),
+            officeMonster = SpriteKey(s.officeMonster),
+            leftOpen = SpriteKey(s.leftOpen),
+            leftClosed = SpriteKey(s.leftClosed),
+            rightOpen = SpriteKey(s.rightOpen),
+            rightClosed = SpriteKey(s.rightClosed),
+            backSafe = SpriteKey(s.backSafe),
+            backDangerous = SpriteKey(s.backDangerous),
+            backKill = SpriteKey(s.backKill),
+            monitorA = SpriteKey(s.monitorA),
+            monitorB = SpriteKey(s.monitorB),
+        };
+
+        for (int i = 0; i < s.rooms.Length; i++)
+        {
+            var r = s.rooms[i] ?? new RoomSpriteSlot();
+            paths.rooms[i] = new RoomSpritePaths
+            {
+                empty = SpriteKey(r.empty),
+                monster = SpriteKey(r.monster),
+                alteredEmpty = SpriteKey(r.alteredEmpty),
+                alteredMonster = SpriteKey(r.alteredMonster),
+            };
+        }
+
+        EditorPrefs.SetString(SpritePrefKey, JsonUtility.ToJson(paths));
+    }
+
+    private static SpriteSlots LoadSavedSprites()
+    {
+        var s = new SpriteSlots();
+        string json = EditorPrefs.GetString(SpritePrefKey, "");
+        if (string.IsNullOrEmpty(json)) return s;
+
+        var p = JsonUtility.FromJson<SpritePaths>(json);
+        if (p == null) return s;
+
+        if (p.rooms != null)
+        {
+            s.rooms = new RoomSpriteSlot[p.rooms.Length];
+            for (int i = 0; i < p.rooms.Length; i++)
+            {
+                var r = p.rooms[i];
+                s.rooms[i] = r == null
+                    ? new RoomSpriteSlot()
+                    : new RoomSpriteSlot
+                    {
+                        empty = LoadSprite(r.empty),
+                        monster = LoadSprite(r.monster),
+                        alteredEmpty = LoadSprite(r.alteredEmpty),
+                        alteredMonster = LoadSprite(r.alteredMonster),
+                    };
+            }
+        }
+
+        s.officeFront = LoadSprite(p.officeFront);
+        s.officeMonster = LoadSprite(p.officeMonster);
+        s.leftOpen = LoadSprite(p.leftOpen);
+        s.leftClosed = LoadSprite(p.leftClosed);
+        s.rightOpen = LoadSprite(p.rightOpen);
+        s.rightClosed = LoadSprite(p.rightClosed);
+        s.backSafe = LoadSprite(p.backSafe);
+        s.backDangerous = LoadSprite(p.backDangerous);
+        s.backKill = LoadSprite(p.backKill);
+        s.monitorA = LoadSprite(p.monitorA);
+        s.monitorB = LoadSprite(p.monitorB);
+        return s;
+    }
+
+    // Garante um slot por sala (nunca encolhe, para não perder o que já foi escolhido)
+    private static SpriteSlots EnsureRoomSlots(SpriteSlots s, int count)
+    {
+        if (s.rooms.Length < count)
+        {
+            var arr = new RoomSpriteSlot[count];
+            System.Array.Copy(s.rooms, arr, s.rooms.Length);
+            s.rooms = arr;
+        }
+
+        for (int i = 0; i < s.rooms.Length; i++)
+            if (s.rooms[i] == null) s.rooms[i] = new RoomSpriteSlot();
+
+        return s;
+    }
+
+    private static RoomSpriteSlot SlotFor(SpriteSlots s, int roomIndex) =>
+        s != null && s.rooms != null && roomIndex < s.rooms.Length ? s.rooms[roomIndex] : null;
+
+    private static Sprite Or(Sprite custom, Sprite fallback) => custom != null ? custom : fallback;
+
+    private static bool[] AlterableFlags(MapLayout layout, int alterableCount)
+    {
+        var flags = new bool[layout.rooms.Length];
+        for (int k = 0; k < Mathf.Min(alterableCount, layout.alterablePriority.Length); k++)
+            flags[layout.alterablePriority[k]] = true;
+        return flags;
+    }
+
+    private static Sprite SpriteField(string label, Sprite value) =>
+        (Sprite)EditorGUILayout.ObjectField(label, value, typeof(Sprite), false);
+
+    // As imagens escolhidas na janela substituem os placeholders do escritório
+    private static void ApplyOverrides(SpriteSet set, SpriteSlots s)
+    {
+        if (s == null) return;
+
+        set.officeEmpty = Or(s.officeFront, set.officeEmpty);
+        set.officeMonster = Or(s.officeMonster, set.officeMonster);
+        set.leftOpen = Or(s.leftOpen, set.leftOpen);
+        set.leftClosed = Or(s.leftClosed, set.leftClosed);
+        set.rightOpen = Or(s.rightOpen, set.rightOpen);
+        set.rightClosed = Or(s.rightClosed, set.rightClosed);
+        set.backSafe = Or(s.backSafe, set.backSafe);
+        set.backDangerous = Or(s.backDangerous, set.backDangerous);
+        set.backKill = Or(s.backKill, set.backKill);
+    }
+
+    // Placeholder das vistas laterais: fundo liso com a "porta" no centro (escura se aberta,
+    // castanha se fechada). A área clicável da porta fica exatamente em cima deste retângulo.
+    private static Color DoorPixel(int x, int y, Color background, bool closed)
+    {
+        bool door = x >= 14 && x < 18 && y >= 4 && y < 13;
+        if (!door) return background;
+        return closed ? new Color(0.45f, 0.25f, 0.12f) : new Color(0.02f, 0.02f, 0.02f);
+    }
+
+    // ------------------------------------------------------------ Aplicar imagens a uma cena já feita
+
+    // Campos vazios não alteram nada. As salas são encontradas pela ordem em que o setup as cria
+    // (filhas de "Rooms"), por isso funciona mesmo que tenhas mudado o número de salas na janela.
+    private static void ApplySpritesToScene(SpriteSlots s)
+    {
+        int roomCount = 0;
+
+        var roomsRoot = GameObject.Find("Rooms");
+        if (roomsRoot != null)
+        {
+            for (int i = 0; i < roomsRoot.transform.childCount; i++)
+            {
+                var room = roomsRoot.transform.GetChild(i).GetComponent<Room>();
+                if (room == null) continue;
+
+                if (room.gameObject.name == "Room_Office")
+                {
+                    SetSpriteIfAssigned(room, "emptySprite", s.officeFront);
+                    SetSpriteIfAssigned(room, "monsterSprite", s.officeMonster);
+                    continue;
+                }
+
+                var slot = SlotFor(s, i);
+                if (slot == null) continue;
+
+                SetSpriteIfAssigned(room, "emptySprite", slot.empty);
+                SetSpriteIfAssigned(room, "monsterSprite", slot.monster);
+                if (room is AlterableRoom)
+                {
+                    SetSpriteIfAssigned(room, "alteredEmptySprite", slot.alteredEmpty);
+                    SetSpriteIfAssigned(room, "alteredMonsterSprite", slot.alteredMonster);
+                }
+                roomCount++;
+            }
+        }
+
+        // Vista da frente (mostra a sala "Office")
+        if (s.officeFront != null)
+        {
+            foreach (var m in FindAll<MonitorController>())
+            {
+                var front = GetRef<SpriteRenderer>(m, "officeView");
+                if (front == null) continue;
+                Undo.RecordObject(front, "FNaF Setup");
+                front.sprite = s.officeFront;
+            }
+        }
+
+        // Transição ao abrir o monitor (cria a imagem se a cena for de uma versão antiga do setup)
+        if (s.monitorA != null || s.monitorB != null)
+        {
+            foreach (var m in FindAll<MonitorController>())
+            {
+                if (GetRef<Image>(m, "transitionImage") == null)
+                {
+                    var panelGo = GetRef<GameObject>(m, "cameraPanel");
+                    if (panelGo != null && panelGo.transform.parent != null)
+                        SetRef(m, "transitionImage",
+                            CreateTransitionImage(panelGo.transform.parent, panelGo.transform));
+                }
+
+                SetSpriteIfAssigned(m, "transitionSpriteA", s.monitorA);
+                SetSpriteIfAssigned(m, "transitionSpriteB", s.monitorB);
+            }
+        }
+
+        // Vistas laterais: fundo com a porta aberta / fechada
+        foreach (var side in FindAll<OfficeSideView>())
+        {
+            bool left = side.gameObject.name == "View_Left";
+            Sprite open = left ? s.leftOpen : s.rightOpen;
+            Sprite closed = left ? s.leftClosed : s.rightClosed;
+
+            SetSpriteIfAssigned(side, "doorOpenSprite", open);
+            SetSpriteIfAssigned(side, "doorClosedSprite", closed);
+
+            var bg = GetRef<SpriteRenderer>(side, "background");
+            if (bg != null && open != null)
+            {
+                Undo.RecordObject(bg, "FNaF Setup");
+                bg.sprite = open;
+            }
+        }
+
+        // Vista de trás: safe / dangerous / kill
+        foreach (var threat in FindAll<BackThreat>())
+        {
+            SetSpriteIfAssigned(threat, "safeSprite", s.backSafe);
+            SetSpriteIfAssigned(threat, "dangerousSprite", s.backDangerous);
+            SetSpriteIfAssigned(threat, "killSprite", s.backKill);
+
+            var screen = GetRef<SpriteRenderer>(threat, "screen");
+            if (screen != null && s.backSafe != null)
+            {
+                Undo.RecordObject(screen, "FNaF Setup");
+                screen.sprite = s.backSafe;
+            }
+        }
+
+        EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
+        Debug.Log($"[FNaF Setup] Imagens aplicadas: {roomCount} sala(s) com câmara, escritório, " +
+                  "vistas laterais e vista de trás.");
+    }
+
+    // Imagem de ecrã inteiro (inativa) que o MonitorController mostra durante a transição
+    private static Image CreateTransitionImage(Transform canvas, Transform panel)
+    {
+        var go = NewObj("MonitorTransition", canvas, typeof(RectTransform), typeof(Image));
+        Stretch(go.GetComponent<RectTransform>());
+        go.transform.SetSiblingIndex(panel.GetSiblingIndex() + 1);
+
+        var img = go.GetComponent<Image>();
+        img.preserveAspect = false;
+        img.raycastTarget = false;
+        go.SetActive(false);
+        return img;
+    }
+
+    private static void SetSpriteIfAssigned(Object target, string field, Sprite value)
+    {
+        if (value != null) SetRef(target, field, value);
+    }
+
+    private static T GetRef<T>(Object target, string field) where T : Object
+    {
+        var p = new SerializedObject(target).FindProperty(field);
+        return p != null ? p.objectReferenceValue as T : null;
+    }
+
     private class SpriteSet
     {
         public Sprite white, circle, ring, noise;
         public Sprite empty, monster, alteredEmpty, alteredMonster;
         public Sprite officeEmpty, officeMonster;
+        public Sprite leftOpen, leftClosed, rightOpen, rightClosed;
+        public Sprite backSafe, backDangerous, backKill;
     }
 
     // ------------------------------------------------------------ Janela
@@ -299,7 +655,11 @@ public class GameSetupWindow : EditorWindow
     private static void Open() => GetWindow<GameSetupWindow>("FNaF Setup");
 
     [MenuItem("Tools/FNaF Setup/Criar tudo (valores por defeito)")]
-    private static void QuickSetup() => Build(2, CustomLayout(), LoadSavedSounds());
+    private static void QuickSetup() => Build(2, CustomLayout(), LoadSavedSounds(), LoadSavedSprites());
+
+    // Aplica as imagens guardadas na janela a um setup que já existe na cena
+    [MenuItem("Tools/FNaF Setup/Aplicar imagens à cena atual")]
+    private static void ApplySpritesMenu() => ApplySpritesToScene(LoadSavedSprites());
 
     // Aplica os sons guardados na janela a um setup que já existe na cena
     [MenuItem("Tools/FNaF Setup/Aplicar sons à cena atual")]
@@ -354,11 +714,16 @@ public class GameSetupWindow : EditorWindow
 
     private void OnGUI()
     {
+        scroll = EditorGUILayout.BeginScrollView(scroll);
+
         EditorGUILayout.HelpBox(
             "Cria na cena atual: escritório, mapa de câmaras estilo FNaF (salas com várias ligações), " +
             "monitor (abre/fecha ao passar o rato na zona em baixo), monstro, UI, o QTE do pentagrama, a interferência " +
             "das câmaras, o game over e as portas do escritório (clicar na porta abre/fecha), com todas as referências ligadas. " +
-            "O escritório fica fora do canvas (sprite no mundo 2D).",
+            "O escritório tem 4 vistas (frente, direita, trás, esquerda) fora do canvas, em sprites 2D: " +
+            "vira-se para os lados com os bordos do ecrã (ou A/D, sem dar a volta); olha-se para trás com a " +
+            "zona por baixo ao lado do monitor (ou S). As vistas laterais têm o fundo com a porta aberta e " +
+            "com a porta fechada, e o ecrã de trás tem os estados safe/dangerous/kill.",
             MessageType.Info);
 
         useCustomMap = EditorGUILayout.ToggleLeft(
@@ -410,23 +775,99 @@ public class GameSetupWindow : EditorWindow
             new GUIContent("Jumpscare", "Toca quando o monstro ataca o jogador."));
         EditorGUILayout.PropertyField(so.FindProperty(nameof(knockClip)),
             new GUIContent("Bater à porta", "Toca do lado da porta (esquerda/direita) quando o monstro bate."));
+        EditorGUILayout.PropertyField(so.FindProperty(nameof(doorOpenClip)),
+            new GUIContent("Porta: abrir"));
+        EditorGUILayout.PropertyField(so.FindProperty(nameof(doorCloseClip)),
+            new GUIContent("Porta: fechar"));
+        EditorGUILayout.PropertyField(so.FindProperty(nameof(backSafeClip)),
+            new GUIContent("Trás: safe", "Toca (vindo de trás) quando a tela de trás passa a safe."));
+        EditorGUILayout.PropertyField(so.FindProperty(nameof(backDangerousClip)),
+            new GUIContent("Trás: dangerous", "Toca (vindo de trás) quando a tela de trás passa a dangerous."));
+        EditorGUILayout.PropertyField(so.FindProperty(nameof(backKillClip)),
+            new GUIContent("Trás: kill", "Toca (vindo de trás) quando a tela de trás passa a kill."));
         if (EditorGUI.EndChangeCheck())
         {
             so.ApplyModifiedProperties();
             SaveSounds();
         }
 
+        // ---- Imagens
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Imagens", EditorStyles.boldLabel);
+        EditorGUILayout.HelpBox(
+            "Campo vazio = sprite placeholder ao criar o setup, e não altera nada ao aplicar à cena atual. " +
+            "A imagem 'com o monstro' de cada sala é a que aparece quando o monstro lá está.",
+            MessageType.None);
+
+        var spriteLayout = useCustomMap ? CustomLayout() : GenerateLayout(totalRooms);
+        spriteSlots = EnsureRoomSlots(spriteSlots, spriteLayout.rooms.Length);
+        var alterableFlags = AlterableFlags(spriteLayout, alterableRooms);
+
+        EditorGUI.BeginChangeCheck();
+
+        showOfficeSprites = EditorGUILayout.Foldout(showOfficeSprites, "Escritório", true);
+        if (showOfficeSprites)
+        {
+            EditorGUI.indentLevel++;
+            spriteSlots.officeFront = SpriteField("Frente: vazio", spriteSlots.officeFront);
+            spriteSlots.officeMonster = SpriteField("Frente: com o monstro", spriteSlots.officeMonster);
+            spriteSlots.leftOpen = SpriteField("Esquerda: porta aberta", spriteSlots.leftOpen);
+            spriteSlots.leftClosed = SpriteField("Esquerda: porta fechada", spriteSlots.leftClosed);
+            spriteSlots.rightOpen = SpriteField("Direita: porta aberta", spriteSlots.rightOpen);
+            spriteSlots.rightClosed = SpriteField("Direita: porta fechada", spriteSlots.rightClosed);
+            spriteSlots.backSafe = SpriteField("Trás: safe", spriteSlots.backSafe);
+            spriteSlots.backDangerous = SpriteField("Trás: dangerous", spriteSlots.backDangerous);
+            spriteSlots.backKill = SpriteField("Trás: kill", spriteSlots.backKill);
+            spriteSlots.monitorA = SpriteField("Monitor: office 1", spriteSlots.monitorA);
+            spriteSlots.monitorB = SpriteField("Monitor: office 2 (a meio)", spriteSlots.monitorB);
+            EditorGUI.indentLevel--;
+        }
+
+        showRoomSprites = EditorGUILayout.Foldout(showRoomSprites,
+            $"Salas das câmaras ({spriteLayout.rooms.Length})", true);
+        if (showRoomSprites)
+        {
+            EditorGUI.indentLevel++;
+            for (int i = 0; i < spriteLayout.rooms.Length; i++)
+            {
+                var slot = spriteSlots.rooms[i];
+                string title = $"CAM {spriteLayout.rooms[i].label}" + (alterableFlags[i] ? "  (alterável)" : "");
+
+                roomFoldout[i] = EditorGUILayout.Foldout(roomFoldout[i], title, true);
+                if (!roomFoldout[i]) continue;
+
+                EditorGUI.indentLevel++;
+                slot.empty = SpriteField("Vazia", slot.empty);
+                slot.monster = SpriteField("Com o monstro", slot.monster);
+                if (alterableFlags[i])
+                {
+                    slot.alteredEmpty = SpriteField("Alterada: vazia", slot.alteredEmpty);
+                    slot.alteredMonster = SpriteField("Alterada: com o monstro", slot.alteredMonster);
+                }
+                EditorGUI.indentLevel--;
+            }
+            EditorGUI.indentLevel--;
+        }
+
+        if (EditorGUI.EndChangeCheck()) SaveSprites(spriteSlots);
+
         EditorGUILayout.Space();
         if (GUILayout.Button("Criar setup completo", GUILayout.Height(32)))
-            Build(alterableRooms, useCustomMap ? CustomLayout() : GenerateLayout(totalRooms), CurrentSounds());
+            Build(alterableRooms, useCustomMap ? CustomLayout() : GenerateLayout(totalRooms),
+                CurrentSounds(), spriteSlots);
 
         if (GUILayout.Button("Aplicar sons à cena atual (campos vazios não alteram)"))
             ApplySoundsToScene(CurrentSounds());
+
+        if (GUILayout.Button("Aplicar imagens à cena atual (campos vazios não alteram)"))
+            ApplySpritesToScene(spriteSlots);
+
+        EditorGUILayout.EndScrollView();
     }
 
     // ------------------------------------------------------------ Build
 
-    private static void Build(int alterableCount, MapLayout layout, SoundSet sounds)
+    private static void Build(int alterableCount, MapLayout layout, SoundSet sounds, SpriteSlots sprites)
     {
         if (GameObject.Find("GameManager") != null &&
             !EditorUtility.DisplayDialog("FNaF Setup",
@@ -443,6 +884,7 @@ public class GameSetupWindow : EditorWindow
         Directory.CreateDirectory(PrefabsDir);
 
         var set = CreateSprites();
+        ApplyOverrides(set, sprites);   // imagens escolhidas na janela substituem os placeholders
         var nodePrefab = CreatePrefab("NodePrefab", set.circle, new Vector2(40f, 40f));
         var linePrefab = CreatePrefab("LinePrefab", set.white, new Vector2(100f, 6f));
 
@@ -458,8 +900,11 @@ public class GameSetupWindow : EditorWindow
             var go = NewObj($"Room_CAM{layout.rooms[i].label}", roomsRoot.transform);
             go.transform.position = new Vector3(layout.rooms[i].pos.x * 10f, layout.rooms[i].pos.y * 10f, 0f);
             rooms[i] = isAlterable[i] ? go.AddComponent<AlterableRoom>() : go.AddComponent<Room>();
-            SetupRoom(rooms[i], $"CAM {layout.rooms[i].label}", set.empty, set.monster,
-                set.alteredEmpty, set.alteredMonster, sounds.noise);
+            var roomSlot = SlotFor(sprites, i);
+            SetupRoom(rooms[i], $"CAM {layout.rooms[i].label}",
+                Or(roomSlot?.empty, set.empty), Or(roomSlot?.monster, set.monster),
+                Or(roomSlot?.alteredEmpty, set.alteredEmpty), Or(roomSlot?.alteredMonster, set.alteredMonster),
+                sounds.noise);
         }
 
         var alterableList = new List<Object>();
@@ -502,6 +947,10 @@ public class GameSetupWindow : EditorWindow
         // Vitória: reparar (QTE) uma vez cada sala alterável diferente
         var win = manager.AddComponent<WinController>();
 
+        // Vistas do escritório (frente/direita/trás/esquerda) e o ecrã de trás (safe/dangerous/kill)
+        var officeViews = manager.AddComponent<OfficeViewController>();
+        var backThreat = manager.AddComponent<BackThreat>();
+
         // AudioSource partilhado do GameManager: som de troca de câmara (e estática, se quiseres)
         var managerAudio = manager.AddComponent<AudioSource>();
         managerAudio.playOnAwake = false;
@@ -522,25 +971,30 @@ public class GameSetupWindow : EditorWindow
 
         EnsureEventSystem();
 
-        // Vista do escritório: FORA do canvas, no mundo 2D (SpriteRenderer), visível quando o
-        // monitor está fechado. Os objetos interativos do escritório (com Interactable) devem ser
-        // FILHOS deste objeto: ficam escondidos enquanto o monitor está aberto.
+        // Vistas do escritório: FORA do canvas, no mundo 2D. Cada vista é um objeto com a sua imagem
+        // (SpriteRenderer ajustado à câmara) e com os objetos interativos dessa vista (as portas dos
+        // lados) como FILHOS. O OfficeViewController mostra uma de cada vez e o monitor esconde
+        // tudo (OfficeViews) quando abre.
         var worldCam = EnsureWorldCamera();
-        var officeViewGo = NewObj("OfficeView", null, typeof(SpriteRenderer), typeof(FitSpriteToCamera));
-        var officeView = officeViewGo.GetComponent<SpriteRenderer>();
-        officeView.sprite = set.officeEmpty;
-        var fit = officeViewGo.GetComponent<FitSpriteToCamera>();
-        SetRef(fit, "targetCamera", worldCam);
-        fit.Fit();
+        var viewsRoot = NewObj("OfficeViews", null);
+        var frontViewGo = CreateOfficeView("View_Front", viewsRoot.transform, set.officeEmpty, worldCam, out var officeView);
+        var rightViewGo = CreateOfficeView("View_Right", viewsRoot.transform, set.rightOpen, worldCam, out var rightRenderer);
+        var backViewGo = CreateOfficeView("View_Back", viewsRoot.transform, set.backSafe, worldCam, out var backRenderer);
+        var leftViewGo = CreateOfficeView("View_Left", viewsRoot.transform, set.leftOpen, worldCam, out var leftRenderer);
 
-        // Portas do escritório: uma por ligação ao escritório, à esquerda ou à direita conforme a
-        // posição da sala no mapa. Ficam fora do OfficeView (que é escalado para a câmara) e num
-        // objeto próprio que o monitor esconde quando abre. Clicar numa porta abre/fecha-a.
-        var doorsRoot = NewObj("OfficeDoors", null);
+        // No editor só a frente fica visível; em jogo o OfficeViewController trata disto
+        rightViewGo.SetActive(false);
+        backViewGo.SetActive(false);
+        leftViewGo.SetActive(false);
+
+        // Portas do escritório: uma por ligação ao escritório. As do lado esquerdo ficam na vista da
+        // esquerda e as do lado direito na vista da direita, conforme a posição da sala no mapa.
+        // Clicar numa porta abre/fecha-a.
         var entranceComps = new List<Object>();
         var doorComps = new List<Object>();
         int doorsLeft = 0, doorsRight = 0;
-        float whiteSize = set.white.bounds.size.x;
+        var leftDoors = new List<Object>();
+        var rightDoors = new List<Object>();
         // As portas são desativadas quando o monitor abre, e um AudioSource desativado não toca:
         // as fontes do som de bater ficam num objeto à parte, sempre ativo
         var knockRoot = NewObj("OfficeKnockSources", null);
@@ -553,27 +1007,29 @@ public class GameSetupWindow : EditorWindow
             float dx = layout.rooms[otherIdx].pos.x - layout.officePos.x;
             float sideSign = dx < 0f ? -1f : 1f;
             int slot = sideSign < 0f ? doorsLeft++ : doorsRight++;
-            float doorX = sideSign * (7f - 2f * slot);
+            // Várias portas do mesmo lado ficam lado a lado dentro da mesma vista
+            float doorX = slot * 2.5f;
+            var sideView = sideSign < 0f ? leftViewGo : rightViewGo;
 
-            var doorGo = NewObj($"Door_CAM{layout.rooms[otherIdx].label}", doorsRoot.transform,
-                typeof(SpriteRenderer), typeof(BoxCollider2D), typeof(Door), typeof(DoorButton),
+            var doorGo = NewObj($"Door_CAM{layout.rooms[otherIdx].label}", sideView.transform,
+                typeof(BoxCollider2D), typeof(Door), typeof(DoorButton),
                 typeof(OfficeEntrance));
-            doorGo.transform.position = new Vector3(doorX, 0f, -1f);
-            doorGo.transform.localScale = new Vector3(1.6f / whiteSize, 4.5f / whiteSize, 1f);
+            doorGo.transform.localPosition = new Vector3(doorX, 0f, -1f);
 
-            var doorRenderer = doorGo.GetComponent<SpriteRenderer>();
-            doorRenderer.sprite = set.white;
-            doorRenderer.color = Color.green;
-            doorRenderer.sortingOrder = 5;
-
+            // A porta é só a área clicável: o desenho da porta aberta/fechada está no fundo da vista
+            // (OfficeSideView troca entre as duas imagens). Ajusta o tamanho a gosto no BoxCollider2D.
             var doorBox = doorGo.GetComponent<BoxCollider2D>();
-            doorBox.size = set.white.bounds.size;
+            doorBox.size = new Vector2(2.2f, 5f);
             doorBox.offset = Vector2.zero;
 
             var doorAudio = CreateKnockSource(knockRoot.transform, doorGo.name);
 
             var doorComp = doorGo.GetComponent<Door>();
-            SetRef(doorComp, "DoorSprite", doorRenderer);
+            // Usa o AudioSource do GameManager (sempre ativo): o da própria porta cortava o som
+            // ao virar para outra vista
+            SetRef(doorComp, "SoundPlayer", managerAudio);
+            SetRef(doorComp, "OpenSound", sounds.doorOpen);
+            SetRef(doorComp, "CloseSound", sounds.doorClose);
 
             SetRef(doorGo.GetComponent<DoorButton>(), "_door", doorComp);
 
@@ -585,15 +1041,33 @@ public class GameSetupWindow : EditorWindow
             if (sounds.knock != null) SetRefArray(entrance, "_knockClips", new Object[] { sounds.knock });
             entranceComps.Add(entrance);
             doorComps.Add(doorComp);
+            (sideSign < 0f ? leftDoors : rightDoors).Add(doorComp);
         }
 
         SetRefArray(monster, "entrances", entranceComps.ToArray());
         SetRef(doorDrain, "health", playerHealth);
         SetRefArray(doorDrain, "doors", doorComps.ToArray());
 
+        // Fundo das vistas laterais: troca entre porta aberta e porta fechada
+        var leftSide = leftViewGo.AddComponent<OfficeSideView>();
+        SetRef(leftSide, "background", leftRenderer);
+        SetRef(leftSide, "doorOpenSprite", set.leftOpen);
+        SetRef(leftSide, "doorClosedSprite", set.leftClosed);
+        SetRefArray(leftSide, "doors", leftDoors.ToArray());
+
+        var rightSide = rightViewGo.AddComponent<OfficeSideView>();
+        SetRef(rightSide, "background", rightRenderer);
+        SetRef(rightSide, "doorOpenSprite", set.rightOpen);
+        SetRef(rightSide, "doorClosedSprite", set.rightClosed);
+        SetRefArray(rightSide, "doors", rightDoors.ToArray());
+
         // Painel das câmaras (só visível quando o monitor está aberto)
         var panel = NewObj("CameraPanel", canvasGo.transform, typeof(RectTransform));
         Stretch(panel.GetComponent<RectTransform>());
+
+        // Transição ao abrir o monitor: office 1 -> (a meio) office 2 -> câmaras.
+        // Fica no canvas, por cima do painel (que está escondido durante a transição).
+        var transitionImg = CreateTransitionImage(canvasGo.transform, panel.transform);
 
         // Feed da câmara
         var feedGo = NewObj("CameraFeed", panel.transform, typeof(RectTransform), typeof(Image));
@@ -717,6 +1191,14 @@ public class GameSetupWindow : EditorWindow
         AddLabel(zoneGo.transform, "^  MONITOR  ^", 22);
         var zone = zoneGo.GetComponent<MonitorHoverZone>();
 
+        // ---- Zonas nos bordos do ecrã para virar o escritório (esquerda/direita).
+        // Escondem-se com o monitor aberto (o OfficeViewController trata disso).
+        var turnZonesGo = NewObj("OfficeTurnZones", canvasGo.transform, typeof(RectTransform));
+        Stretch(turnZonesGo.GetComponent<RectTransform>());
+        var leftZoneGo = CreateTurnZone(turnZonesGo.transform, "TurnZone_Left", "<", false, -1, officeViews);
+        var rightZoneGo = CreateTurnZone(turnZonesGo.transform, "TurnZone_Right", ">", true, 1, officeViews);
+        CreateBackZone(turnZonesGo.transform, officeViews);
+
         // ---- Barra de vida (canto superior esquerdo, visível com o monitor aberto ou fechado)
         CreateHealthBar(canvasGo.transform, set.white, playerHealth);
 
@@ -764,7 +1246,30 @@ public class GameSetupWindow : EditorWindow
         SetRef(monitor, "officeRoom", office);
         SetRef(monitor, "officeView", officeView);
         SetRef(monitor, "qte", qte);
-        SetRef(monitor, "officeExtras", doorsRoot);
+        SetRef(monitor, "officeRoot", viewsRoot);
+        SetRef(monitor, "transitionImage", transitionImg);
+        SetRef(monitor, "transitionSpriteA", sprites != null ? sprites.monitorA : null);
+        SetRef(monitor, "transitionSpriteB", sprites != null ? sprites.monitorB : null);
+
+        SetRef(officeViews, "frontView", frontViewGo);
+        SetRef(officeViews, "rightView", rightViewGo);
+        SetRef(officeViews, "backView", backViewGo);
+        SetRef(officeViews, "leftView", leftViewGo);
+        SetRef(officeViews, "monitor", monitor);
+        SetRef(officeViews, "turnZones", turnZonesGo);
+        SetRefArray(officeViews, "sideZones", new Object[] { leftZoneGo, rightZoneGo });
+        SetRef(officeViews, "audioSource", managerAudio);
+
+        SetRef(backThreat, "screen", backRenderer);
+        SetRef(backThreat, "safeSprite", set.backSafe);
+        SetRef(backThreat, "dangerousSprite", set.backDangerous);
+        SetRef(backThreat, "killSprite", set.backKill);
+        SetRef(backThreat, "office", officeViews);
+        SetRef(backThreat, "gameOver", gameOver);
+        // audioSource fica vazio de propósito: o BackThreat cria a sua fonte 3D (som vindo de trás)
+        SetRef(backThreat, "safeClip", sounds.backSafe);
+        SetRef(backThreat, "dangerousClip", sounds.backDangerous);
+        SetRef(backThreat, "killClip", sounds.backKill);
         SetRef(monitor, "audioSource", managerAudio);
         SetRef(monitor, "openClip", sounds.monitorOpen);
         SetRef(monitor, "closeClip", sounds.monitorClose);
@@ -806,7 +1311,7 @@ public class GameSetupWindow : EditorWindow
         Selection.activeGameObject = manager;
         AssetDatabase.SaveAssets();
 
-        Debug.Log($"[FNaF Setup] Criados: escritório + {roomCount} salas com câmara em mapa " +
+        Debug.Log($"[FNaF Setup] Criados: escritório (frente/direita/trás/esquerda) + {roomCount} salas com câmara em mapa " +
                   $"({alterableCount} alteráveis), monitor, monstro, UI, QTE e interferência das câmaras. " +
                   "Troca os sprites placeholder pelos teus.");
     }
@@ -878,6 +1383,64 @@ public class GameSetupWindow : EditorWindow
         img.raycastTarget = false;
     }
 
+    // ------------------------------------------------------------ Vistas do escritório
+
+    // Uma vista: objeto-contentor (onde ficam as portas) + imagem ajustada à câmara.
+    // O contentor não é escalado, por isso os filhos (portas) mantêm o tamanho.
+    private static GameObject CreateOfficeView(string name, Transform parent, Sprite sprite, Camera cam,
+        out SpriteRenderer renderer)
+    {
+        var view = NewObj(name, parent);
+        var imageGo = NewObj("Image", view.transform, typeof(SpriteRenderer), typeof(FitSpriteToCamera));
+
+        renderer = imageGo.GetComponent<SpriteRenderer>();
+        renderer.sprite = sprite;
+
+        var fit = imageGo.GetComponent<FitSpriteToCamera>();
+        SetRef(fit, "targetCamera", cam);
+        fit.Fit();
+        return view;
+    }
+
+    // Faixa vertical num bordo do ecrã: passar o rato por cima vira o escritório
+    private static GameObject CreateTurnZone(Transform parent, string name, string label, bool rightSide,
+        int direction, OfficeViewController office)
+    {
+        var go = NewObj(name, parent, typeof(RectTransform), typeof(Image), typeof(OfficeTurnZone));
+        var rt = go.GetComponent<RectTransform>();
+        float x = rightSide ? 1f : 0f;
+        rt.anchorMin = new Vector2(x, 0f);
+        rt.anchorMax = new Vector2(x, 1f);
+        rt.pivot = new Vector2(x, 0.5f);
+        rt.anchoredPosition = Vector2.zero;
+        rt.sizeDelta = new Vector2(70f, 0f);
+
+        var img = go.GetComponent<Image>();
+        img.color = new Color(1f, 1f, 1f, 0.08f);
+        img.raycastTarget = true;
+        AddLabel(go.transform, label, 40);
+
+        var zone = go.GetComponent<OfficeTurnZone>();
+        SetRef(zone, "_office", office);
+        SetInt(zone, "_direction", direction);
+        return go;
+    }
+
+    // Zona por baixo, ao lado da zona do monitor: passar o rato olha para trás (e volta)
+    private static void CreateBackZone(Transform parent, OfficeViewController office)
+    {
+        var go = NewObj("BackZone", parent, typeof(RectTransform), typeof(Image), typeof(OfficeBackZone));
+        Place(go.GetComponent<RectTransform>(), new Vector2(0.5f, 0f), new Vector2(0f, 0f),
+            new Vector2(370f, 0f), new Vector2(260f, 60f));
+
+        var img = go.GetComponent<Image>();
+        img.color = new Color(1f, 1f, 1f, 0.12f);
+        img.raycastTarget = true;
+        AddLabel(go.transform, "v  TRÁS  v", 22);
+
+        SetRef(go.GetComponent<OfficeBackZone>(), "_office", office);
+    }
+
     // ------------------------------------------------------------ Salas
 
     private static void SetupRoom(Room room, string roomName, Sprite empty, Sprite monster,
@@ -932,6 +1495,17 @@ public class GameSetupWindow : EditorWindow
 
         s.officeEmpty = GetOrCreateSprite("office_empty", 16, 9, (x, y) => new Color(0.16f, 0.13f, 0.09f));
         s.officeMonster = GetOrCreateSprite("office_monster", 16, 9, (x, y) => new Color(0.40f, 0.08f, 0.05f));
+
+        // Vistas laterais e de trás (a de trás tem 3 estados)
+        var leftBg = new Color(0.13f, 0.14f, 0.10f);
+        var rightBg = new Color(0.10f, 0.12f, 0.16f);
+        s.leftOpen = GetOrCreateSprite("office_left_open", 32, 18, (x, y) => DoorPixel(x, y, leftBg, false));
+        s.leftClosed = GetOrCreateSprite("office_left_closed", 32, 18, (x, y) => DoorPixel(x, y, leftBg, true));
+        s.rightOpen = GetOrCreateSprite("office_right_open", 32, 18, (x, y) => DoorPixel(x, y, rightBg, false));
+        s.rightClosed = GetOrCreateSprite("office_right_closed", 32, 18, (x, y) => DoorPixel(x, y, rightBg, true));
+        s.backSafe = GetOrCreateSprite("office_back_safe", 16, 9, (x, y) => new Color(0.10f, 0.22f, 0.12f));
+        s.backDangerous = GetOrCreateSprite("office_back_dangerous", 16, 9, (x, y) => new Color(0.45f, 0.30f, 0.05f));
+        s.backKill = GetOrCreateSprite("office_back_kill", 16, 9, (x, y) => new Color(0.55f, 0.02f, 0.02f));
 
         return s;
     }
@@ -1176,6 +1750,36 @@ public class GameSetupWindow : EditorWindow
                 SetRefArray(e, "_knockClips", new Object[] { sounds.knock });
         }
 
+        if (sounds.doorOpen != null || sounds.doorClose != null)
+        {
+            // Fonte partilhada do GameManager (sempre ativa), se a porta ainda não tiver uma fora dela
+            AudioSource shared = null;
+            var cams = FindAll<CameraController>();
+            if (cams.Length > 0)
+            {
+                EnsureAudioSource(cams[0], "audioSource");
+                shared = GetRef<AudioSource>(cams[0], "audioSource");
+            }
+
+            foreach (var d in FindAll<Door>())
+            {
+                if (shared != null) SetRef(d, "SoundPlayer", shared);
+                else EnsureAudioSource(d, "SoundPlayer");
+                if (sounds.doorOpen != null) SetRef(d, "OpenSound", sounds.doorOpen);
+                if (sounds.doorClose != null) SetRef(d, "CloseSound", sounds.doorClose);
+            }
+        }
+
+        if (sounds.backSafe != null || sounds.backDangerous != null || sounds.backKill != null)
+        {
+            foreach (var b in FindAll<BackThreat>())
+            {
+                if (sounds.backSafe != null) SetRef(b, "safeClip", sounds.backSafe);
+                if (sounds.backDangerous != null) SetRef(b, "dangerousClip", sounds.backDangerous);
+                if (sounds.backKill != null) SetRef(b, "killClip", sounds.backKill);
+            }
+        }
+
         EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
         Debug.Log($"[FNaF Setup] Sons aplicados: {roomCount} sala(s), {camCount} CameraController, " +
                   $"{interferenceCount} CameraInterference.");
@@ -1305,6 +1909,19 @@ public class GameSetupWindow : EditorWindow
             return;
         }
         p.floatValue = value;
+        so.ApplyModifiedPropertiesWithoutUndo();
+    }
+
+    private static void SetInt(Object target, string field, int value)
+    {
+        var so = new SerializedObject(target);
+        var p = so.FindProperty(field);
+        if (p == null)
+        {
+            Debug.LogError($"[FNaF Setup] Campo '{field}' não encontrado em {target.GetType().Name}.");
+            return;
+        }
+        p.intValue = value;
         so.ApplyModifiedPropertiesWithoutUndo();
     }
 

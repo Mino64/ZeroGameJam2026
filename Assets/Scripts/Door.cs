@@ -11,7 +11,9 @@ public class Door : MonoBehaviour
     [SerializeField] private AudioSource SoundPlayer;
 
     private bool closed = false;
-   
+
+    public event System.Action<bool> ClosedChanged;
+
 
     private void Start()
     {
@@ -23,7 +25,9 @@ public class Door : MonoBehaviour
     {
         set
         {
+            if (closed == value) return;
             closed = value;
+            ClosedChanged?.Invoke(closed);
         }
         get
         {
@@ -33,15 +37,22 @@ public class Door : MonoBehaviour
     public void ToggleDoor()
     {
         Closed = !Closed;
-        if (closed)
+
+        if (DoorSprite != null)
         {
-            DoorSprite.sprite = CloseIMG;
-            SoundPlayer.PlayOneShot(CloseSound);
+            Sprite sprite = closed ? CloseIMG : OpenIMG;
+            if (sprite != null)
+            {
+                DoorSprite.sprite = sprite;
+                DoorSprite.color = Color.white;
+            }
+            else
+            {
+                DoorSprite.color = closed ? Color.red : Color.green;
+            }
         }
-        else
-        {
-            DoorSprite.sprite = OpenIMG;
-            SoundPlayer.PlayOneShot(OpenSound);
-        }
+
+        AudioClip clip = closed ? CloseSound : OpenSound;
+        if (SoundPlayer != null && clip != null) SoundPlayer.PlayOneShot(clip);
     }
 }
