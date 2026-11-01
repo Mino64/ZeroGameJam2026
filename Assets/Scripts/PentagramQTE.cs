@@ -23,6 +23,11 @@ public class PentagramQTE : MonoBehaviour, IPointerDownHandler, IPointerUpHandle
     [SerializeField] private float lineThickness = 6f;
     [SerializeField] private bool showGuide = true;
 
+    [Header("Números")]
+    [SerializeField] private bool showNumbers = true;
+    [SerializeField] private int numberSize = 24;
+    [SerializeField] private Color numberColor = Color.black;
+
     [Header("Jogabilidade")]
     [SerializeField] private float hitRadius = 35f;
     [SerializeField] private float timeLimit = 4f;
@@ -44,6 +49,11 @@ public class PentagramQTE : MonoBehaviour, IPointerDownHandler, IPointerUpHandle
     [SerializeField] private AudioClip successClip;
     [SerializeField] private AudioClip failClip;
 
+    [Header("Som ao ligar cada ponto (sobe a cada ponto ligado)")]
+    [SerializeField] private AudioClip stepClip;
+    [SerializeField] private Vector2 stepPitch = new Vector2(0.8f, 1.6f);
+    [SerializeField] private Vector2 stepVolume = new Vector2(0.6f, 1f);
+
     private static readonly int[] Order = { 0, 2, 4, 1, 3, 0 };
 
     public bool IsActive { get; private set; }
@@ -53,6 +63,8 @@ public class PentagramQTE : MonoBehaviour, IPointerDownHandler, IPointerUpHandle
     private readonly List<Image> nodeImages = new List<Image>();
     private readonly List<Image> lines = new List<Image>();
     private readonly List<Image> guideLines = new List<Image>();
+    private readonly List<RectTransform> numberLabels = new List<RectTransform>();
+    private AudioSource stepSource;
     private Image tail;
     private System.Action onSuccess, onFail;
     private float timer;
@@ -113,6 +125,8 @@ public class PentagramQTE : MonoBehaviour, IPointerDownHandler, IPointerUpHandle
             nodeImages.Add(img);
         }
 
+        BuildNumbers();
+
         if (showGuide)
         {
             for (int i = 0; i < Order.Length - 1; i++)
@@ -130,6 +144,7 @@ public class PentagramQTE : MonoBehaviour, IPointerDownHandler, IPointerUpHandle
         tail.raycastTarget = false;
         tail.color = lineColor;
         tail.gameObject.SetActive(false);
+        PlaceBehindNumbers(tail);
 
         if (staticOverlay) staticOverlay.transform.SetAsLastSibling();
     }
@@ -156,9 +171,11 @@ public class PentagramQTE : MonoBehaviour, IPointerDownHandler, IPointerUpHandle
             seg.color = lineColor;
             SetLine(seg, last, target);
             lines.Add(seg);
+            PlaceBehindNumbers(seg);
 
             SetNodeColor(Order[step], litColor);
             step++;
+            PlayStepSound(step);
 
             if (step >= Order.Length)
             {
@@ -180,6 +197,7 @@ public class PentagramQTE : MonoBehaviour, IPointerDownHandler, IPointerUpHandle
             step = 1;
             SetNodeColor(Order[0], litColor);
             tail.gameObject.SetActive(true);
+            PlayStepSound(1);
         }
     }
 
@@ -280,13 +298,86 @@ public class PentagramQTE : MonoBehaviour, IPointerDownHandler, IPointerUpHandle
         foreach (RectTransform n in nodes) if (n) Destroy(n.gameObject);
         foreach (Image l in lines) if (l) Destroy(l.gameObject);
         foreach (Image g in guideLines) if (g) Destroy(g.gameObject);
+        foreach (RectTransform l in numberLabels) if (l) Destroy(l.gameObject);
         if (tail) Destroy(tail.gameObject);
 
         nodes.Clear();
         nodeImages.Clear();
         lines.Clear();
         guideLines.Clear();
+        numberLabels.Clear();
         tail = null;
+    }
+
+    // Número de cada ponto = posição em que tem de ser ligado (o 1 também fecha a estrela)
+    private void BuildNumbers()
+    {
+        if (!showNumbers) return;
+
+        Font font = GetNumberFont();
+
+        for (int i = 0; i < nodes.Count; i++)
+        {
+            var go = new GameObject("Number_" + i, typeof(RectTransform), typeof(Text));
+            var rt = (RectTransform)go.transform;
+            rt.SetParent(area, false);
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = nodes[i].anchoredPosition;
+            rt.sizeDelta = nodes[i].sizeDelta;
+
+            var t = go.GetComponent<Text>();
+            t.font = font;
+            t.fontSize = numberSize;
+            t.fontStyle = FontStyle.Bold;
+            t.alignment = TextAnchor.MiddleCenter;
+            t.color = numberColor;
+            t.horizontalOverflow = HorizontalWrapMode.Overflow;
+            t.verticalOverflow = VerticalWrapMode.Overflow;
+            t.raycastTarget = false;
+            t.text = (System.Array.IndexOf(Order, i) + 1).ToString();
+
+            numberLabels.Add(rt);
+        }
+    }
+
+    // As linhas passam por baixo dos números, para nunca os taparem
+    private void PlaceBehindNumbers(Image line)
+    {
+        if (line == null || numberLabels.Count == 0 || numberLabels[0] == null) return;
+        line.transform.SetSiblingIndex(numberLabels[0].GetSiblingIndex());
+    }
+
+    private static Font GetNumberFont()
+    {
+#if UNITY_2022_2_OR_NEWER
+        return Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+#else
+        return Resources.GetBuiltinResource<Font>("Arial.ttf");
+#endif
+    }
+
+    // count = pontos já ligados (1..6). Tom e volume sobem a cada ponto.
+    private void PlayStepSound(int count)
+    {
+        if (stepClip == null) return;
+
+        if (stepSource == null)
+        {
+            // Fonte própria (o pitch é por fonte, não pode afetar os outros sons), num objeto que
+            // não é desativado com o QTE
+            Transform parent = audioSource != null ? audioSource.transform : transform;
+            var go = new GameObject("QTEStepSound");
+            go.transform.SetParent(parent, false);
+            stepSource = go.AddComponent<AudioSource>();
+            stepSource.playOnAwake = false;
+            stepSource.spatialBlend = 0f;
+            if (audioSource != null) stepSource.outputAudioMixerGroup = audioSource.outputAudioMixerGroup;
+        }
+
+        float k = Order.Length > 1 ? Mathf.Clamp01((count - 1f) / (Order.Length - 1f)) : 1f;
+        stepSource.pitch = Mathf.Lerp(stepPitch.x, stepPitch.y, k);
+        stepSource.PlayOneShot(stepClip, Mathf.Lerp(stepVolume.x, stepVolume.y, k));
     }
 
     private Vector2 MouseLocal()

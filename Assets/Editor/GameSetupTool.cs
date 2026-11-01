@@ -71,6 +71,7 @@ public class GameSetupWindow : EditorWindow
     [SerializeField] private AudioClip monitorCloseClip;
     [SerializeField] private AudioClip qteSuccessClip;
     [SerializeField] private AudioClip qteFailClip;
+    [SerializeField] private AudioClip qteStepClip;
     [SerializeField] private AudioClip jumpscareClip;
     [SerializeField] private AudioClip knockClip;
     [SerializeField] private AudioClip doorOpenClip;
@@ -85,6 +86,7 @@ public class GameSetupWindow : EditorWindow
         public AudioClip cameraSwitch;
         public AudioClip interference;
         public AudioClip monitorOpen, monitorClose, qteSuccess, qteFail, jumpscare, knock;
+        public AudioClip qteStep;
         public AudioClip doorOpen, doorClose, backSafe, backDangerous, backKill;
     }
 
@@ -95,6 +97,7 @@ public class GameSetupWindow : EditorWindow
         public string cameraSwitch = "";
         public string interference = "";
         public string monitorOpen = "", monitorClose = "", qteSuccess = "", qteFail = "", jumpscare = "", knock = "";
+        public string qteStep = "";
         public string doorOpen = "", doorClose = "", backSafe = "", backDangerous = "", backKill = "";
     }
 
@@ -118,6 +121,7 @@ public class GameSetupWindow : EditorWindow
             monitorClose = monitorCloseClip,
             qteSuccess = qteSuccessClip,
             qteFail = qteFailClip,
+            qteStep = qteStepClip,
             jumpscare = jumpscareClip,
             knock = knockClip,
             doorOpen = doorOpenClip,
@@ -140,6 +144,7 @@ public class GameSetupWindow : EditorWindow
             monitorClose = PathOf(s.monitorClose),
             qteSuccess = PathOf(s.qteSuccess),
             qteFail = PathOf(s.qteFail),
+            qteStep = PathOf(s.qteStep),
             jumpscare = PathOf(s.jumpscare),
             knock = PathOf(s.knock),
             doorOpen = PathOf(s.doorOpen),
@@ -172,6 +177,7 @@ public class GameSetupWindow : EditorWindow
         set.monitorClose = LoadClip(paths.monitorClose);
         set.qteSuccess = LoadClip(paths.qteSuccess);
         set.qteFail = LoadClip(paths.qteFail);
+        set.qteStep = LoadClip(paths.qteStep);
         set.jumpscare = LoadClip(paths.jumpscare);
         set.knock = LoadClip(paths.knock);
         set.doorOpen = LoadClip(paths.doorOpen);
@@ -192,6 +198,7 @@ public class GameSetupWindow : EditorWindow
         monitorCloseClip = saved.monitorClose;
         qteSuccessClip = saved.qteSuccess;
         qteFailClip = saved.qteFail;
+        qteStepClip = saved.qteStep;
         jumpscareClip = saved.jumpscare;
         knockClip = saved.knock;
         doorOpenClip = saved.doorOpen;
@@ -661,6 +668,181 @@ public class GameSetupWindow : EditorWindow
     [MenuItem("Tools/FNaF Setup/Aplicar imagens à cena atual")]
     private static void ApplySpritesMenu() => ApplySpritesToScene(LoadSavedSprites());
 
+    // Cria o minijogo do pentagrama dentro do painel das câmaras (inativo até ser usado)
+    private static PentagramQTE CreateQte(Transform panel, SpriteSet set, GameObject nodePrefab,
+        GameObject linePrefab, AudioSource managerAudio, SoundSet sounds)
+    {
+        var qteGo = NewObj("PentagramQTE", panel, typeof(RectTransform), typeof(Image));
+        var qteRT = qteGo.GetComponent<RectTransform>();
+        Place(qteRT, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(420f, 420f));
+        var qteBg = qteGo.GetComponent<Image>();
+        qteBg.color = new Color(0f, 0f, 0f, 0.75f);
+        qteBg.raycastTarget = true;
+        var qte = qteGo.AddComponent<PentagramQTE>();
+
+        var ringGo = NewObj("Circle", qteGo.transform, typeof(RectTransform), typeof(Image));
+        Place(ringGo.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+            Vector2.zero, new Vector2(300f, 300f));
+        var ringImg = ringGo.GetComponent<Image>();
+        ringImg.sprite = set.ring;
+        ringImg.color = new Color(1f, 1f, 1f, 0.7f);
+        ringImg.raycastTarget = false;
+
+        var barGo = NewObj("TimerBar", qteGo.transform, typeof(RectTransform), typeof(Image));
+        Place(barGo.GetComponent<RectTransform>(), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+            new Vector2(0f, -14f), new Vector2(360f, 12f));
+        var bar = barGo.GetComponent<Image>();
+        bar.sprite = set.white;
+        bar.type = Image.Type.Filled;
+        bar.fillMethod = Image.FillMethod.Horizontal;
+        bar.fillOrigin = 0;
+        bar.fillAmount = 1f;
+        bar.color = new Color(0.9f, 0.15f, 0.15f);
+        bar.raycastTarget = false;
+
+        var staticGo = NewObj("StaticOverlay", qteGo.transform,
+            typeof(RectTransform), typeof(Image), typeof(CanvasGroup));
+        Stretch(staticGo.GetComponent<RectTransform>());
+        var staticImg = staticGo.GetComponent<Image>();
+        staticImg.sprite = set.noise;
+        staticImg.raycastTarget = false;
+        var staticGroup = staticGo.GetComponent<CanvasGroup>();
+        staticGroup.alpha = 0f;
+        staticGroup.blocksRaycasts = false;
+        staticGroup.interactable = false;
+
+        SetRef(qte, "area", qteRT);
+        SetRef(qte, "circle", ringGo.GetComponent<RectTransform>());
+        SetRef(qte, "nodePrefab", nodePrefab.GetComponent<RectTransform>());
+        SetRef(qte, "linePrefab", linePrefab.GetComponent<Image>());
+        SetRef(qte, "timerBar", bar);
+        SetRef(qte, "staticOverlay", staticGroup);
+        // AudioSource do GameManager (o objeto do QTE é desativado e cortaria o som)
+        SetRef(qte, "audioSource", managerAudio);
+        SetRef(qte, "successClip", sounds.qteSuccess);
+        SetRef(qte, "failClip", sounds.qteFail);
+        SetRef(qte, "stepClip", sounds.qteStep);
+
+        qteGo.SetActive(false);
+        return qte;
+    }
+
+    // Reconstrói só o minijogo do pentagrama numa cena já feita, sem mexer no resto.
+    // Mantém os valores que já tinhas ajustados no QTE (raio, tempo, cores...) e os sons que já tinha.
+    private static void UpdateQteInScene(SoundSet sounds)
+    {
+        var olds = FindAll<PentagramQTE>();
+        if (olds.Length == 0)
+        {
+            EditorUtility.DisplayDialog("FNaF Setup",
+                "Não encontrei nenhum PentagramQTE na cena. Usa \"Criar setup completo\" primeiro.", "OK");
+            return;
+        }
+
+        var old = olds[0];
+        var panel = old.transform.parent;
+        if (panel == null)
+        {
+            Debug.LogWarning("[FNaF Setup] O PentagramQTE não está dentro de um painel; nada foi alterado.");
+            return;
+        }
+
+        Directory.CreateDirectory(SpritesDir);
+        Directory.CreateDirectory(PrefabsDir);
+
+        var set = CreateSprites();
+
+        // Reutiliza os prefabs (nós e linhas) do QTE antigo, para manter o que tenhas personalizado
+        var nodeRT = GetRef<RectTransform>(old, "nodePrefab");
+        var lineImg = GetRef<Image>(old, "linePrefab");
+        var nodePrefab = nodeRT != null ? nodeRT.gameObject : CreatePrefab("NodePrefab", set.circle, new Vector2(40f, 40f));
+        var linePrefab = lineImg != null ? lineImg.gameObject : CreatePrefab("LinePrefab", set.white, new Vector2(100f, 6f));
+        var audio = GetRef<AudioSource>(old, "audioSource");
+
+        int sibling = old.transform.GetSiblingIndex();
+        var fresh = CreateQte(panel, set, nodePrefab, linePrefab, audio, sounds);
+
+        // Copia os valores ajustados (não referências); os clips só se a janela não tiver um
+        var oso = new SerializedObject(old);
+        var nso = new SerializedObject(fresh);
+        var it = oso.GetIterator();
+        bool enter = true;
+        while (it.NextVisible(enter))
+        {
+            enter = false;
+            if (it.name == "m_Script") continue;
+
+            var np = nso.FindProperty(it.propertyPath);
+            if (np == null || np.propertyType != it.propertyType) continue;
+
+            if (it.propertyType == SerializedPropertyType.ObjectReference)
+            {
+                bool clip = it.name == "successClip" || it.name == "failClip" || it.name == "stepClip";
+                if (clip && np.objectReferenceValue == null) np.objectReferenceValue = it.objectReferenceValue;
+                continue;
+            }
+
+            CopyPropertyValue(it, np);
+        }
+        nso.ApplyModifiedProperties();
+
+        if (audio == null) LinkSharedAudio(fresh);
+
+        foreach (var m in FindAll<MonitorController>()) SetRef(m, "qte", fresh);
+        foreach (var r in FindAll<RepairController>()) SetRef(r, "qte", fresh);
+
+        Undo.DestroyObjectImmediate(old.gameObject);
+        fresh.transform.SetSiblingIndex(sibling);
+
+        EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
+        Debug.Log("[FNaF Setup] Minijogo do pentagrama atualizado (o resto da cena não foi alterado).");
+    }
+
+    // Copia o valor de uma propriedade serializada para outra do mesmo tipo (não referências)
+    private static void CopyPropertyValue(SerializedProperty src, SerializedProperty dst)
+    {
+        switch (src.propertyType)
+        {
+            case SerializedPropertyType.Integer:
+            case SerializedPropertyType.LayerMask:
+            case SerializedPropertyType.Character:
+                dst.longValue = src.longValue; break;
+            case SerializedPropertyType.Boolean: dst.boolValue = src.boolValue; break;
+            case SerializedPropertyType.Float: dst.floatValue = src.floatValue; break;
+            case SerializedPropertyType.String: dst.stringValue = src.stringValue; break;
+            case SerializedPropertyType.Color: dst.colorValue = src.colorValue; break;
+            case SerializedPropertyType.Enum: dst.enumValueIndex = src.enumValueIndex; break;
+            case SerializedPropertyType.Vector2: dst.vector2Value = src.vector2Value; break;
+            case SerializedPropertyType.Vector3: dst.vector3Value = src.vector3Value; break;
+            case SerializedPropertyType.Vector4: dst.vector4Value = src.vector4Value; break;
+            case SerializedPropertyType.Vector2Int: dst.vector2IntValue = src.vector2IntValue; break;
+            case SerializedPropertyType.Rect: dst.rectValue = src.rectValue; break;
+            case SerializedPropertyType.AnimationCurve: dst.animationCurveValue = src.animationCurveValue; break;
+        }
+    }
+
+    [MenuItem("Tools/FNaF Setup/Atualizar minijogo do pentagrama (cena atual)")]
+    private static void UpdateQteMenu() => UpdateQteInScene(LoadSavedSounds());
+
+    // Liga o botão a um método público sem parâmetros, pelo nome (não obriga o método a existir
+    // ao compilar: se o script ainda não o tiver, avisa em vez de dar erro)
+    private static void AddCall(Button btn, Object target, string method)
+    {
+        var mi = target.GetType().GetMethod(method,
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance,
+            null, System.Type.EmptyTypes, null);
+
+        if (mi == null)
+        {
+            Debug.LogWarning($"[FNaF Setup] {target.GetType().Name} não tem o método {method}(). " +
+                             "Atualiza esse script e volta a aplicar.");
+            return;
+        }
+
+        var action = (UnityAction)System.Delegate.CreateDelegate(typeof(UnityAction), target, mi);
+        UnityEventTools.AddPersistentListener(btn.onClick, action);
+    }
+
     // Acrescenta o botão "MENU PRINCIPAL" aos painéis de derrota e vitória de uma cena já feita
     [MenuItem("Tools/FNaF Setup/Adicionar botão de menu principal aos painéis")]
     private static void AddMainMenuButtonsMenu()
@@ -674,7 +856,7 @@ public class GameSetupWindow : EditorWindow
 
             var btn = CreateButton("Btn_MainMenu", "MENU PRINCIPAL", panel.transform,
                 new Vector2(0.5f, 0.5f), new Vector2(-120f, -280f), new Vector2(240f, 60f));
-            UnityEventTools.AddPersistentListener(btn.onClick, new UnityAction(g.GoToMainMenu));
+            AddCall(btn, g, "GoToMainMenu");
             added++;
         }
 
@@ -685,7 +867,7 @@ public class GameSetupWindow : EditorWindow
 
             var btn = CreateButton("Btn_MainMenu", "MENU PRINCIPAL", panel.transform,
                 new Vector2(0.5f, 0.5f), new Vector2(-150f, -280f), new Vector2(300f, 60f));
-            UnityEventTools.AddPersistentListener(btn.onClick, new UnityAction(w.GoToMainMenu));
+            AddCall(btn, w, "GoToMainMenu");
             added++;
         }
 
@@ -803,6 +985,8 @@ public class GameSetupWindow : EditorWindow
             new GUIContent("QTE: sucesso"));
         EditorGUILayout.PropertyField(so.FindProperty(nameof(qteFailClip)),
             new GUIContent("QTE: falha"));
+        EditorGUILayout.PropertyField(so.FindProperty(nameof(qteStepClip)),
+            new GUIContent("QTE: ponto ligado", "Toca a cada ponto ligado; o tom e o volume sobem a cada ponto."));
         EditorGUILayout.PropertyField(so.FindProperty(nameof(jumpscareClip)),
             new GUIContent("Jumpscare", "Toca quando o monstro ataca o jogador."));
         EditorGUILayout.PropertyField(so.FindProperty(nameof(knockClip)),
@@ -896,6 +1080,9 @@ public class GameSetupWindow : EditorWindow
 
         if (GUILayout.Button("Adicionar botão de menu principal aos painéis (cena atual)"))
             AddMainMenuButtonsMenu();
+
+        if (GUILayout.Button("Atualizar minijogo do pentagrama (cena atual, sem refazer o resto)"))
+            UpdateQteInScene(CurrentSounds());
 
         EditorGUILayout.EndScrollView();
     }
@@ -1177,44 +1364,7 @@ public class GameSetupWindow : EditorWindow
         repairButtonObj.gameObject.SetActive(false);
 
         // ---- QTE do pentagrama (dentro do painel das câmaras)
-        var qteGo = NewObj("PentagramQTE", panel.transform, typeof(RectTransform), typeof(Image));
-        var qteRT = qteGo.GetComponent<RectTransform>();
-        Place(qteRT, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(420f, 420f));
-        var qteBg = qteGo.GetComponent<Image>();
-        qteBg.color = new Color(0f, 0f, 0f, 0.75f);
-        qteBg.raycastTarget = true;
-        var qte = qteGo.AddComponent<PentagramQTE>();
-
-        var ringGo = NewObj("Circle", qteGo.transform, typeof(RectTransform), typeof(Image));
-        Place(ringGo.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            Vector2.zero, new Vector2(300f, 300f));
-        var ringImg = ringGo.GetComponent<Image>();
-        ringImg.sprite = set.ring;
-        ringImg.color = new Color(1f, 1f, 1f, 0.7f);
-        ringImg.raycastTarget = false;
-
-        var barGo = NewObj("TimerBar", qteGo.transform, typeof(RectTransform), typeof(Image));
-        Place(barGo.GetComponent<RectTransform>(), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, -14f), new Vector2(360f, 12f));
-        var bar = barGo.GetComponent<Image>();
-        bar.sprite = set.white;
-        bar.type = Image.Type.Filled;
-        bar.fillMethod = Image.FillMethod.Horizontal;
-        bar.fillOrigin = 0;
-        bar.fillAmount = 1f;
-        bar.color = new Color(0.9f, 0.15f, 0.15f);
-        bar.raycastTarget = false;
-
-        var staticGo = NewObj("StaticOverlay", qteGo.transform,
-            typeof(RectTransform), typeof(Image), typeof(CanvasGroup));
-        Stretch(staticGo.GetComponent<RectTransform>());
-        var staticImg = staticGo.GetComponent<Image>();
-        staticImg.sprite = set.noise;
-        staticImg.raycastTarget = false;
-        var staticGroup = staticGo.GetComponent<CanvasGroup>();
-        staticGroup.alpha = 0f;
-        staticGroup.blocksRaycasts = false;
-        staticGroup.interactable = false;
+        var qte = CreateQte(panel.transform, set, nodePrefab, linePrefab, managerAudio, sounds);
 
         // ---- Zona de hover do monitor (estilo FNaF): passar o rato abre/fecha o monitor.
         // Fica no fim do canvas, por cima do painel das câmaras, para funcionar nas duas vistas.
@@ -1255,7 +1405,7 @@ public class GameSetupWindow : EditorWindow
         UnityEventTools.AddPersistentListener(restartButton.onClick, new UnityAction(gameOver.Restart));
         var gameOverMenuButton = CreateButton("Btn_MainMenu", "MENU PRINCIPAL", gameOverGo.transform,
             new Vector2(0.5f, 0.5f), new Vector2(-120f, -280f), new Vector2(240f, 60f));
-        UnityEventTools.AddPersistentListener(gameOverMenuButton.onClick, new UnityAction(gameOver.GoToMainMenu));
+        AddCall(gameOverMenuButton, gameOver, "GoToMainMenu");
         gameOverGo.SetActive(false);
 
         var winGo = NewObj("WinPanel", canvasGo.transform, typeof(RectTransform), typeof(Image));
@@ -1267,7 +1417,7 @@ public class GameSetupWindow : EditorWindow
         UnityEventTools.AddPersistentListener(winRestartButton.onClick, new UnityAction(win.Restart));
         var winMenuButton = CreateButton("Btn_MainMenu", "MENU PRINCIPAL", winGo.transform,
             new Vector2(0.5f, 0.5f), new Vector2(-150f, -280f), new Vector2(300f, 60f));
-        UnityEventTools.AddPersistentListener(winMenuButton.onClick, new UnityAction(win.GoToMainMenu));
+        AddCall(winMenuButton, win, "GoToMainMenu");
         winGo.SetActive(false);
 
         // ---- Ligações
@@ -1336,18 +1486,6 @@ public class GameSetupWindow : EditorWindow
         SetRef(interference, "audioSource", managerAudio);
         SetRef(interference, "staticClip", sounds.interference);
 
-        SetRef(qte, "area", qteRT);
-        SetRef(qte, "circle", ringGo.GetComponent<RectTransform>());
-        SetRef(qte, "nodePrefab", nodePrefab.GetComponent<RectTransform>());
-        SetRef(qte, "linePrefab", linePrefab.GetComponent<Image>());
-        SetRef(qte, "timerBar", bar);
-        SetRef(qte, "staticOverlay", staticGroup);
-        // AudioSource do GameManager (o objeto do QTE é desativado e cortaria o som)
-        SetRef(qte, "audioSource", managerAudio);
-        SetRef(qte, "successClip", sounds.qteSuccess);
-        SetRef(qte, "failClip", sounds.qteFail);
-
-        qteGo.SetActive(false);
 
         Undo.CollapseUndoOperations(undoGroup);
         EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
@@ -1767,13 +1905,14 @@ public class GameSetupWindow : EditorWindow
             }
         }
 
-        if (sounds.qteSuccess != null || sounds.qteFail != null)
+        if (sounds.qteSuccess != null || sounds.qteFail != null || sounds.qteStep != null)
         {
             foreach (var q in FindAll<PentagramQTE>())
             {
                 LinkSharedAudio(q);
                 if (sounds.qteSuccess != null) SetRef(q, "successClip", sounds.qteSuccess);
                 if (sounds.qteFail != null) SetRef(q, "failClip", sounds.qteFail);
+                if (sounds.qteStep != null) SetRef(q, "stepClip", sounds.qteStep);
             }
         }
 
